@@ -1,0 +1,188 @@
+{
+  "subjects": [
+    {
+      "idnumber": "sub0",
+      "name": "Основы разработки Web-приложений"
+    },
+    {
+      "idnumber": "sub1",
+      "name": "Защита информации"
+    },
+    {
+      "idnumber": "sub2",
+      "name": "Основы инженерии знаний"
+    },
+	{
+      "idnumber": "sub3",
+      "name": "Физкультура"
+    },
+	{
+      "idnumber": "sub4",
+      "name": "Проектная деятельность"
+    }
+  ],
+  "event_kinds": [
+    {
+      "idnumber": "kin0",
+      "name": "Лекция"
+    },
+    {
+      "idnumber": "kin1",
+      "name": "Практика"
+    },
+	{
+      "idnumber": "kin2",
+      "name": "Лабораторная работа"
+    }
+  ],
+  "time_slots": [
+    {
+      "idnumber": "tim1",
+      "start_time": "08:30",
+      "end_time": "10:00"
+    },
+	{
+      "idnumber": "tim2",
+      "start_time": "10:10",
+      "end_time": "11:40"
+    },
+	{
+      "idnumber": "tim3",
+      "start_time": "11:50",
+      "end_time": "13:20"
+    },
+	{
+      "idnumber": "tim4",
+      "start_time": "13:40",
+      "end_time": "15:10"
+    },
+	{
+      "idnumber": "tim5",
+      "start_time": "15:20",
+      "end_time": "16:50"
+    },
+	{
+      "idnumber": "tim6",
+      "start_time": "17:00",
+      "end_time": "18:30"
+    }
+  ],
+  "event_places": [
+    {
+      "idnumber": "pla0",
+      "building": "В",
+      "room": "Ауд. 902"
+    },
+    {
+      "idnumber": "pla1",
+      "building": "В",
+      "room": "Ауд. 1302а"
+    },
+	{
+      "idnumber": "pla2",
+      "building": "В",
+      "room": "Ауд. 502"
+    },
+	{
+      "idnumber": "pla3",
+      "building": "В",
+      "room": "УЛК5"
+    }
+  ],
+  "event_participants": [
+    {
+      "idnumber": "par0",
+      "name": "Группа ПрИн-466",
+      "role": "student"
+    },
+    {
+      "idnumber": "par1",
+      "name": "Дмитриев А.С.",
+      "role": "teacher"
+    },
+    {
+      "idnumber": "par2",
+      "name": "Жариков Д.Н.",
+      "role": "teacher"
+    },
+	{
+      "idnumber": "par3",
+      "name": "Шкарупа А.Э.",
+      "role": "teacher"
+    },
+	{
+      "idnumber": "par4",
+      "name": "Сурнина С.В.",
+      "role": "teacher"
+    },{
+      "idnumber": "par5",
+      "name": "Синкевич Д.А.",
+      "role": "teacher"
+    },
+	{
+      "idnumber": "par6",
+      "name": "Набока М.В.",
+      "role": "teacher"
+    }
+  ],
+  "schedules": [
+    {
+      "idnumber": "sch0",
+      "faculty": "ФЭВТ",
+      "scope": "bachelor",
+      "course": 4,
+      "semester": 7,
+      "years": "2024-2025"
+    }
+  ],
+  "events": [
+    {
+      "idnumber": "eve0",
+      "subject_id": "sub0",
+      "kind_id": "kin2",
+      "schedule_id": "sch0",
+      "participants": [
+        "par0",
+        "par1"
+      ],
+      "holding_info": [
+        {
+          "idnumber": "hol0",
+          "place_id": "pla0",
+          "date": "2024-10-21",
+          "slot_id": "tim5"
+        },
+		{
+          "idnumber": "hol0",
+          "place_id": "pla0",
+          "date": "2024-10-21",
+          "slot_id": "tim6"
+        }
+      ]
+    },
+	{
+      "idnumber": "eve1",
+      "subject_id": "sub1",
+      "kind_id": "kin2",
+      "schedule_id": "sch0",
+      "participants": [
+        "par0",
+        "par2"
+      ],
+      "holding_info": [
+        {
+          "idnumber": "hol0",
+          "place_id": "pla1",
+          "date": "2024-10-22",
+          "slot_id": "tim3"
+        },
+		{
+          "idnumber": "hol0",
+          "place_id": "pla1",
+          "date": "2024-10-22",
+          "slot_id": "tim4"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+django>=5.0
+djangorestframework
+django-filter
+drf-redesign
+Markdown
+django_extensions
