@@ -26,4 +26,5 @@ urlpatterns = [
     path("api/", include("api.urls")),
     path("", index),
     path("accounts/profile/", index),
+    path('', include('visualization.urls')),
 ]

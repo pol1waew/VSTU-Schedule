@@ -1,0 +1,59 @@
+header {
+    background-color: lightgrey;
+    padding: 10px;
+    margin-bottom: 50px;
+}
+
+.header-container {
+    margin-bottom: 10px;
+}
+
+header button {
+    padding: 5px 10px;
+}
+
+header select {
+    padding: 5px 30px;
+}
+
+table {
+    border-collapse: collapse;
+    border-width: 2px;
+    border-style: solid;
+    width: 100%;
+}
+
+.schedule-date-info {
+    display: flex;
+}
+
+.schedule-date-info p {
+    margin-right: 20px;
+}
+
+table button {
+    font-weight: bold;
+    border-style: none;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+table button:hover {
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+th, td {
+    text-align: center;
+    border-width: 1px;
+    border-style: solid;
+}
+
+th {
+    background-color: lightgrey;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+tr:nth-child(even) {
+    background-color: rgb(240, 240, 240);
+}
