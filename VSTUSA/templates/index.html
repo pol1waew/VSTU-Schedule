@@ -32,10 +32,11 @@
             </div>
         </header>
 
+        {% for date in dates %}
         <table>
             <div class="schedule-date-info">
                 <p>Понедельник</p>
-                <p>32.13.2029</p>
+                <p>{{ date }}</p>
                 <p>1-я неделя</p>
             </div>
 
@@ -57,37 +58,16 @@
             </thead>
 
             <tbody>
-                <tr>
-                    <td name="c1d">{{ time }}</td>
-                    <td name="c2d">{{ subject }}</td>
-                    <td name="c3d">{{ teacher }}</td>
-                    <td name="c4d">{{ place }}</td>
-                </tr>
-                <tr>
-                    <td name="c1d">{{ time }}</td>
-                    <td name="c2d">{{ subject }}</td>
-                    <td name="c3d">{{ teacher }}</td>
-                    <td name="c4d">{{ place }}</td>
-                </tr>
-                <tr>
-                    <td name="c1d">{{ time }}</td>
-                    <td name="c2d">{{ subject }}</td>
-                    <td name="c3d">{{ teacher }}</td>
-                    <td name="c4d">{{ place }}</td>
-                </tr>
+                {% for entry in entries|getItem:date %}
+                    <tr>
+                        <td name="c1d">{{ entry.start_time }} - {{ entry.end_time}}</td>
+                        <td name="c2d">{{ entry.subject }}</td>
+                        <td name="c3d">{{ entry.teacher }}</td>
+                        <td name="c4d">{{ entry.place_building }} {{ entry.place_room }}</td>
+                    </tr>
+                {% endfor %}
             </tbody>
         </table>
-
-        <script>
-            function qwe() {
-                elem = document.getElementById("c1vb");
-                if (elem.textContent == ">") {
-                    elem.textContent = "<";
-                }
-                else {
-                    elem.textContent = ">";
-                }
-            }
-        </script>
+        {% endfor %}
     </body>
 </html>
