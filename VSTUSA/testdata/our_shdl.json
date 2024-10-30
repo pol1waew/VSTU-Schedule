@@ -19,6 +19,14 @@
 	{
       "idnumber": "sub4",
       "name": "Проектная деятельность"
+    },
+	{
+      "idnumber": "sub5",
+      "name": "НИР"
+    },
+	{
+      "idnumber": "sub6",
+      "name": "Теория и ФЯиМТ"
     }
   ],
   "event_kinds": [
@@ -87,6 +95,16 @@
       "idnumber": "pla3",
       "building": "В",
       "room": "УЛК5"
+    },
+	{
+      "idnumber": "pla4",
+      "building": "В",
+      "room": "1201"
+    },
+	{
+      "idnumber": "pla5",
+      "building": "В",
+      "room": "903"
     }
   ],
   "event_participants": [
@@ -122,6 +140,21 @@
 	{
       "idnumber": "par6",
       "name": "Набока М.В.",
+      "role": "teacher"
+    },
+	{
+      "idnumber": "par7",
+      "name": "Быков Д.В.",
+      "role": "teacher"
+    },
+	{
+      "idnumber": "par8",
+      "name": "Гилка В.В.",
+      "role": "teacher"
+    },
+	{
+      "idnumber": "par9",
+      "name": "Сычёв О.А.",
       "role": "teacher"
     }
   ],
@@ -223,6 +256,54 @@
           "place_id": "pla3",
           "date": "2024-10-23",
           "slot_id": "tim5"
+        }
+      ]
+    },
+	{
+	  "idnumber": "eve4",
+      "subject_id": "sub2",
+      "kind_id": "kin2",
+      "schedule_id": "sch0",
+      "participants": [
+        "par0",
+        "par3"
+      ],
+      "holding_info": [
+        {
+          "idnumber": "hol7",
+          "place_id": "pla0",
+          "date": "2024-10-24",
+          "slot_id": "tim5"
+        },
+		{
+          "idnumber": "hol8",
+          "place_id": "pla0",
+          "date": "2024-10-24",
+          "slot_id": "tim6"
+        }
+      ]
+    },
+	{
+	  "idnumber": "eve5",
+      "subject_id": "sub4",
+      "kind_id": "kin2",
+      "schedule_id": "sch0",
+      "participants": [
+        "par0",
+        "par6"
+      ],
+      "holding_info": [
+        {
+          "idnumber": "hol9",
+          "place_id": "pla0",
+          "date": "2024-10-26",
+          "slot_id": "tim1"
+        },
+		{
+          "idnumber": "hol10",
+          "place_id": "pla0",
+          "date": "2024-10-26",
+          "slot_id": "tim2"
         }
       ]
     }

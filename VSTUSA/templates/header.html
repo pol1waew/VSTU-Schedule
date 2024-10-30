@@ -1,0 +1,26 @@
+<form method="get">
+    {% csrf_token %}
+    <header>
+        <div class="header-container">
+            <input type="submit" name="today" value="На сегодня" {% if filters.date == 0 %} disabled {% endif %}>
+            <input type="submit" name="tomorrow" value="На завтра" {% if filters.date == 1 %} disabled {% endif %}>
+            <input type="submit" name="this_week" value="На эту неделю" {% if filters.date == 2 %} disabled {% endif %}>
+            <input type="submit" name="next_week" value="На следующую неделю" {% if filters.date == 3 %} disabled {% endif %}>
+        </div>
+    
+        <div class="header-container">
+            <input type="submit" name="group" value="По группам" {% if filters.sort == 0 %} disabled {% endif %}>
+            <input type="submit" name="teacher" value="По преподавателям" {% if filters.sort == 1 %} disabled {% endif %}>
+            <input type="submit" name="place" value="По аудиториям" {% if filters.sort == 2 %} disabled {% endif %}>
+        </div>
+    
+        <div class="header-container">
+            <select>
+                <option>ПрИн-366</option>
+                <option>ПрИн-367</option>
+                <option selected>ПрИн-466</option>
+                <option>ПрИн-467</option>
+            </select>
+        </div>
+    </header>
+</form>

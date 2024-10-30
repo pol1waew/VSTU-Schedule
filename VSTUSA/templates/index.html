@@ -4,70 +4,12 @@
         {% load static %}
         <link rel="stylesheet" href="{% static 'styles/style.css' %}">
         <title>Расписание</title>
-        <script src="{% static 'js/columnVisibility.js' %}"></script>
+        <script src="{% static 'js/tableScripts.js' %}"></script>
     </head>
 
     <body>
-        <header>
-            <div class="header-container">
-                <button>На сегодня</button>
-                <button>На завтра</button>
-                <button>На эту неделю</button>
-                <button>На следующую неделю</button>
-            </div>
+        {% include "header.html" %}
 
-            <div class="header-container">
-                <button>По группам</button>
-                <button>По преподавателям</button>
-                <button>По аудиториям</button>
-            </div>
-
-            <div class="header-container">
-                <select>
-                    <option>ПрИн-366</option>
-                    <option>ПрИн-367</option>
-                    <option selected>ПрИн-466</option>
-                    <option>ПрИн-467</option>
-                </select>
-            </div>
-        </header>
-
-        {% for date in dates %}
-        <table>
-            <div class="schedule-date-info">
-                <p>{{ weekDays|getItem:date }}</p>
-                <p>{{ date }}</p>
-                <p>1-я неделя</p>
-            </div>
-
-            <thead>
-                <tr>
-                    <th id='c1h{{ forloop.counter }}'>
-                        <button onclick="changeVisibility('c1', '{{ forloop.counter }}')">Время</button>
-                    </th>
-                    <th id='c2h{{ forloop.counter }}'>
-                        <button onclick="changeVisibility('c2', '{{ forloop.counter }}')">Предмет</button>
-                    </th>
-                    <th id='c3h{{ forloop.counter }}'>
-                        <button onclick="changeVisibility('c3', '{{ forloop.counter }}')">Преподаватель</button>
-                    </th>
-                    <th id='c4h{{ forloop.counter }}'>
-                        <button onclick="changeVisibility('c4', '{{ forloop.counter }}')">Аудитория</button>
-                    </th>
-                </tr>
-            </thead>
-
-            <tbody>
-                {% for entry in entries|getItem:date %}
-                    <tr>
-                        <td name='c1d{{ forloop.parentloop.counter }}'>{{ entry.start_time }} - {{ entry.end_time}}</td>
-                        <td name='c2d{{ forloop.parentloop.counter }}'>{{ entry.subject }}</td>
-                        <td name='c3d{{ forloop.parentloop.counter }}'>{{ entry.teacher }}</td>
-                        <td name='c4d{{ forloop.parentloop.counter }}'>{{ entry.place_building }} {{ entry.place_room }}</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% endfor %}
+        {% include "studentsTable.html" %}
     </body>
 </html>

@@ -8,7 +8,7 @@ header {
     margin-bottom: 10px;
 }
 
-header button {
+header input[type=submit] {
     padding: 5px 10px;
 }
 
