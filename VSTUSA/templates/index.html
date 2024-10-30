@@ -35,24 +35,24 @@
         {% for date in dates %}
         <table>
             <div class="schedule-date-info">
-                <p>Понедельник</p>
+                <p>{{ weekDays|getItem:date }}</p>
                 <p>{{ date }}</p>
                 <p>1-я неделя</p>
             </div>
 
             <thead>
                 <tr>
-                    <th id="c1h">
-                        <button onclick="changeVisibility('c1')">Время</button>
+                    <th id='c1h{{ forloop.counter }}'>
+                        <button onclick="changeVisibility('c1', '{{ forloop.counter }}')">Время</button>
                     </th>
-                    <th id="c2h">
-                        <button onclick="changeVisibility('c2')">Предмет</button>
+                    <th id='c2h{{ forloop.counter }}'>
+                        <button onclick="changeVisibility('c2', '{{ forloop.counter }}')">Предмет</button>
                     </th>
-                    <th id="c3h">
-                        <button onclick="changeVisibility('c3')">Преподаватель</button>
+                    <th id='c3h{{ forloop.counter }}'>
+                        <button onclick="changeVisibility('c3', '{{ forloop.counter }}')">Преподаватель</button>
                     </th>
-                    <th id="c4h">
-                        <button id="c4b" onclick="changeVisibility('c4')">Аудитория</button>
+                    <th id='c4h{{ forloop.counter }}'>
+                        <button onclick="changeVisibility('c4', '{{ forloop.counter }}')">Аудитория</button>
                     </th>
                 </tr>
             </thead>
@@ -60,10 +60,10 @@
             <tbody>
                 {% for entry in entries|getItem:date %}
                     <tr>
-                        <td name="c1d">{{ entry.start_time }} - {{ entry.end_time}}</td>
-                        <td name="c2d">{{ entry.subject }}</td>
-                        <td name="c3d">{{ entry.teacher }}</td>
-                        <td name="c4d">{{ entry.place_building }} {{ entry.place_room }}</td>
+                        <td name='c1d{{ forloop.parentloop.counter }}'>{{ entry.start_time }} - {{ entry.end_time}}</td>
+                        <td name='c2d{{ forloop.parentloop.counter }}'>{{ entry.subject }}</td>
+                        <td name='c3d{{ forloop.parentloop.counter }}'>{{ entry.teacher }}</td>
+                        <td name='c4d{{ forloop.parentloop.counter }}'>{{ entry.place_building }} {{ entry.place_room }}</td>
                     </tr>
                 {% endfor %}
             </tbody>

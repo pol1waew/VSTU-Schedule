@@ -1,18 +1,18 @@
-function changeVisibility(id = "") {
-    var cds = document.getElementsByName(id + "d");
+function changeVisibility(elementId = "", entryId) {
+    var cds = document.getElementsByName(elementId + "d" + entryId);
 
     if (cds[0].style.visibility == "hidden") {
         cds.forEach((element) => {
             (element).style.visibility = "visible";
             (element).style.lineHeight = "normal";
         });
-        document.getElementById(id + "h").style.width = "auto";
+        document.getElementById(elementId + "h"  + entryId).style.width = "auto";
     }
     else {
         cds.forEach((element) => {
             (element).style.visibility = "hidden";
             (element).style.lineHeight = "0px";
         });
-        document.getElementById(id + "h").style.width = "0%";
+        document.getElementById(elementId + "h"  + entryId).style.width = "0%";
     }
 }
