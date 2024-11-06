@@ -1,15 +1,11 @@
 header {
     background-color: lightgrey;
-    padding: 10px;
-    margin-bottom: 50px;
+    padding: 30px 10px 30px 10px;
+    margin-bottom: 30px;
 }
 
 .header-container {
-    margin-bottom: 10px;
-}
-
-header input[type=submit] {
-    padding: 5px 10px;
+    display: inline-block;
 }
 
 header select {

@@ -2,24 +2,28 @@
     {% csrf_token %}
     <header>
         <div class="header-container">
-            <input type="submit" name="today" value="На сегодня" {% if filters.date == 0 %} disabled {% endif %}>
-            <input type="submit" name="tomorrow" value="На завтра" {% if filters.date == 1 %} disabled {% endif %}>
-            <input type="submit" name="this_week" value="На эту неделю" {% if filters.date == 2 %} disabled {% endif %}>
-            <input type="submit" name="next_week" value="На следующую неделю" {% if filters.date == 3 %} disabled {% endif %}>
+            <select name="date" onchange="this.form.submit()">
+                <option value="0" {% if filters.date == 0 %} selected {% endif %}>На сегодня</option>
+                <option value="1" {% if filters.date == 1 %} selected {% endif %}>На завтра</option>
+                <option value="2" {% if filters.date == 2 %} selected {% endif %}>На эту неделю</option>
+                <option value="3" {% if filters.date == 3 %} selected {% endif %}>На следующую неделю</option>
+            </select>
         </div>
     
         <div class="header-container">
-            <input type="submit" name="group" value="По группам" {% if filters.sort == 0 %} disabled {% endif %}>
-            <input type="submit" name="teacher" value="По преподавателям" {% if filters.sort == 1 %} disabled {% endif %}>
-            <input type="submit" name="place" value="По аудиториям" {% if filters.sort == 2 %} disabled {% endif %}>
+            <select name="sort" onchange="this.form.submit()">
+                <option value="0" {% if filters.sort == 0 %} selected {% endif %}>По группам</option>
+                <option value="1" {% if filters.sort == 1 %} selected {% endif %}>По преподавателям</option>
+                <option value="2" {% if filters.sort == 2 %} selected {% endif %}>По аудиториям</option>
+            </select>
         </div>
     
         <div class="header-container">
-            <select>
-                <option>ПрИн-366</option>
-                <option>ПрИн-367</option>
-                <option selected>ПрИн-466</option>
-                <option>ПрИн-467</option>
+            <select name="option" onchange="this.form.submit()">
+                <option value="" selected>Все</option>
+                {% for option in options %}
+                    <option value="{{ option }}" {% if filters.option == option %} selected {% endif %}>{{ option }}</option>
+                {% endfor %}
             </select>
         </div>
     </header>

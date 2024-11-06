@@ -10,6 +10,16 @@
     <body>
         {% include "header.html" %}
 
-        {% include "studentsTable.html" %}
+        {% if dates|length != 0 %}
+            {% if filters.sort == 0 %}
+                {% include "studentsTable.html" %}
+            {% elif filters.sort == 1 %}
+                {% include "teachersTable.html" %}
+            {% elif filters.sort == 2 %}
+                {% include "placesTable.html" %}
+            {% endif %}
+        {% else %}
+            {% include "emptyTable.html" %}
+        {% endif %}
     </body>
 </html>

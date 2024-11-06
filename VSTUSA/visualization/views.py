@@ -14,29 +14,26 @@ def index(request):
     weekDays = {}
     weekNumber = {}
 
-    filters = {"date" : 2,
-               "sort" : 0}
+    filters = {"date" :  int(request.GET.get("date", 2)),
+               "sort" :  int(request.GET.get("sort", 0)),
+               "option" :  request.GET.get("option", "")}
 
-    if (request.GET.get("today", False)):
-        filters["date"] = 0
-        dates = getDates("today")
-    elif (request.GET.get("tomorrow", False)):
-        filters["date"] = 1
-        dates = getDates("tomorrow")
-    elif (request.GET.get("next_week", False)):
-        filters["date"] = 3
-        dates = getDates("next_week")
-    else:
-        filters["date"] = 2
-        dates = getDates("this_week")
+    dates = getDates(filters["date"])
 
-    for date in dates:
-        entries[date] = getEntries(date)
+    for date in reversed(dates):
+        entry = getEntries(date, filters)
+        # remove dates with no entries (lessons)
+        if (len(entry) == 0):
+            dates.remove(date)
+            continue
+
+        entries[date] = entry
         weekDays[date] = dateToWeekDay(date)
         weekNumber[date] = dayToWeekNumber(date)
 
     data = {"dates" : dates, 
             "entries" : entries, 
+            "options" : getSelectOptions(filters["sort"]),
             "weekDays" : weekDays,
             "weekNumber" : weekNumber,
             "filters" : filters}
