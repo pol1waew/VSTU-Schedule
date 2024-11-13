@@ -1,39 +1,59 @@
 {% for date in dates %}
-    <table>
-        <div class="schedule-date-info">
-            <p>{{ weekDays|getItem:date }}</p>
-            <p>{{ date }}</p>
-            <p>{{ weekNumber|getItem:date }}-я неделя</p>
-        </div>
-
-        <thead>
-            <tr>
-                <th id='c1h{{ forloop.counter }}'>
-                    <button onclick="changeVisibility('c1', '{{ forloop.counter }}')">Время</button>
-                </th>
-                <th id='c2h{{ forloop.counter }}'>
-                    <button onclick="changeVisibility('c2', '{{ forloop.counter }}')">Предмет</button>
-                </th>
-                <th id='c3h{{ forloop.counter }}'>
-                    <button onclick="changeVisibility('c3', '{{ forloop.counter }}')">Преподаватель</button>
-                </th>
-                <th id='c4h{{ forloop.counter }}'>
-                    <button onclick="changeVisibility('c4', '{{ forloop.counter }}')">Аудитория</button>
-                </th>
-            </tr>
-        </thead>
-
-        <tbody>
-            {% for entry in entries|getItem:date %}
-                <tr name="r{{ forloop.parentloop.counter }}">
-                    <td name='c1d{{ forloop.parentloop.counter }}'>{{ entry.start_time }} - {{ entry.end_time}}</td>
-                    <td name='c2d{{ forloop.parentloop.counter }}'>{{ entry.subject }}</td>
-                    <td name='c3d{{ forloop.parentloop.counter }}'>{{ entry.teacher }}</td>
-                    <td name='c4d{{ forloop.parentloop.counter }}'>{{ entry.place_building }} {{ entry.place_room }}</td>
+    <div class="schedule-date-info">
+        <p>{{ weekDays|getItem:date }}</p>
+        <p>{{ date|dateFormat }}</p>
+        <p>{{ weekNumber|getItem:date }}-я неделя</p>
+    </div>
+    <div style="display: flex;">
+        <table style="width: fit-content;">
+            <thead>
+                <tr>
+                    {% for month in calendar|getItem:date|first %}
+                            <th style="writing-mode: vertical-rl; transform: scale(-1, -1);">{{ month }}</th>
+                    {% endfor %}
                 </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+            </thead>
+
+            <tbody>
+                {% for daysEntry in calendar|getItem:date|last %}
+                    <tr>
+                        {% for entry in daysEntry %}
+                            <td>{{ entry }}</td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <table>
+            <thead>
+                <tr>
+                    <th id='c1h{{ forloop.counter }}'>
+                        <button onclick="changeVisibility('c1', '{{ forloop.counter }}')">Время</button>
+                    </th>
+                    <th id='c2h{{ forloop.counter }}'>
+                        <button onclick="changeVisibility('c2', '{{ forloop.counter }}')">Предмет</button>
+                    </th>
+                    <th id='c3h{{ forloop.counter }}'>
+                        <button onclick="changeVisibility('c3', '{{ forloop.counter }}')">Преподаватель</button>
+                    </th>
+                    <th id='c4h{{ forloop.counter }}'>
+                        <button onclick="changeVisibility('c4', '{{ forloop.counter }}')">Аудитория</button>
+                    </th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for entry in entries|getItem:date %}
+                    <tr name="r{{ forloop.parentloop.counter }}">
+                        <td name='c1d{{ forloop.parentloop.counter }}'>{{ entry.start_time }} - {{ entry.end_time}}</td>
+                        <td name='c2d{{ forloop.parentloop.counter }}'>{{ entry.subject }}</td>
+                        <td name='c3d{{ forloop.parentloop.counter }}'>{{ entry.teacher }}</td>
+                        <td name='c4d{{ forloop.parentloop.counter }}'>{{ entry.place_building }} {{ entry.place_room }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 {% endfor %}
 
 <script>spanSameRows();</script>

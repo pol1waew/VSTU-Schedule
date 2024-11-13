@@ -45,32 +45,32 @@
   ],
   "time_slots": [
     {
-      "idnumber": "tim1",
+      "idnumber": "tim0",
       "start_time": "08:30",
       "end_time": "10:00"
     },
 	{
-      "idnumber": "tim2",
+      "idnumber": "tim1",
       "start_time": "10:10",
       "end_time": "11:40"
     },
 	{
-      "idnumber": "tim3",
+      "idnumber": "tim2",
       "start_time": "11:50",
       "end_time": "13:20"
     },
 	{
-      "idnumber": "tim4",
+      "idnumber": "tim3",
       "start_time": "13:40",
       "end_time": "15:10"
     },
 	{
-      "idnumber": "tim5",
+      "idnumber": "tim4",
       "start_time": "15:20",
       "end_time": "16:50"
     },
 	{
-      "idnumber": "tim6",
+      "idnumber": "tim5",
       "start_time": "17:00",
       "end_time": "18:30"
     }
@@ -99,12 +99,12 @@
 	{
       "idnumber": "pla4",
       "building": "В",
-      "room": "1201"
+      "room": "Ауд. 1201"
     },
 	{
       "idnumber": "pla5",
       "building": "В",
-      "room": "903"
+      "room": "Ауд. 903"
     }
   ],
   "event_participants": [
@@ -183,13 +183,13 @@
           "idnumber": "hol0",
           "place_id": "pla0",
           "date": "2024-10-21",
-          "slot_id": "tim5"
+          "slot_id": "tim4"
         },
 		{
           "idnumber": "hol1",
           "place_id": "pla0",
           "date": "2024-10-21",
-          "slot_id": "tim6"
+          "slot_id": "tim5"
         }
       ]
     },
@@ -207,13 +207,13 @@
           "idnumber": "hol2",
           "place_id": "pla1",
           "date": "2024-10-22",
-          "slot_id": "tim3"
+          "slot_id": "tim2"
         },
 		{
           "idnumber": "hol3",
           "place_id": "pla1",
           "date": "2024-10-22",
-          "slot_id": "tim4"
+          "slot_id": "tim3"
         }
       ]
     },
@@ -231,13 +231,13 @@
           "idnumber": "hol4",
           "place_id": "pla2",
           "date": "2024-10-23",
-          "slot_id": "tim3"
+          "slot_id": "tim2"
         },
 		{
           "idnumber": "hol5",
           "place_id": "pla2",
           "date": "2024-10-23",
-          "slot_id": "tim4"
+          "slot_id": "tim3"
         }
       ]
     },
@@ -255,7 +255,7 @@
           "idnumber": "hol6",
           "place_id": "pla3",
           "date": "2024-10-23",
-          "slot_id": "tim5"
+          "slot_id": "tim4"
         }
       ]
     },
@@ -273,13 +273,13 @@
           "idnumber": "hol7",
           "place_id": "pla0",
           "date": "2024-10-24",
-          "slot_id": "tim5"
+          "slot_id": "tim4"
         },
 		{
           "idnumber": "hol8",
           "place_id": "pla0",
           "date": "2024-10-24",
-          "slot_id": "tim6"
+          "slot_id": "tim5"
         }
       ]
     },
@@ -297,13 +297,229 @@
           "idnumber": "hol9",
           "place_id": "pla0",
           "date": "2024-10-26",
-          "slot_id": "tim1"
+          "slot_id": "tim0"
         },
 		{
           "idnumber": "hol10",
           "place_id": "pla0",
           "date": "2024-10-26",
+          "slot_id": "tim1"
+        }
+      ]
+    },
+	{
+	  "idnumber": "eve6",
+      "subject_id": "sub0",
+      "kind_id": "kin0",
+      "schedule_id": "sch0",
+      "participants": [
+        "par0",
+        "par1"
+      ],
+      "holding_info": [
+        {
+          "idnumber": "hol11",
+          "place_id": "pla4",
+          "date": "2024-10-28",
           "slot_id": "tim2"
+        },
+		{
+          "idnumber": "hol12",
+          "place_id": "pla4",
+          "date": "2024-10-28",
+          "slot_id": "tim3"
+        }
+      ]
+    },
+	{
+	  "idnumber": "eve7",
+      "subject_id": "sub3",
+      "kind_id": "kin1",
+      "schedule_id": "sch0",
+      "participants": [
+        "par0",
+        "par4"
+      ],
+      "holding_info": [
+		{
+          "idnumber": "hol13",
+          "place_id": "pla3",
+          "date": "2024-10-28",
+          "slot_id": "tim4"
+        }
+      ]
+    },
+	{
+	  "idnumber": "eve8",
+      "subject_id": "sub1",
+      "kind_id": "kin0",
+      "schedule_id": "sch0",
+      "participants": [
+        "par0",
+        "par7"
+      ],
+      "holding_info": [
+        {
+          "idnumber": "hol14",
+          "place_id": "pla2",
+          "date": "2024-10-29",
+          "slot_id": "tim2"
+        },
+		{
+          "idnumber": "hol15",
+          "place_id": "pla2",
+          "date": "2024-10-29",
+          "slot_id": "tim3"
+        }
+      ]
+    },
+	{
+	  "idnumber": "eve9",
+      "subject_id": "sub5",
+      "kind_id": "kin2",
+      "schedule_id": "sch0",
+      "participants": [
+        "par0",
+        "par8"
+      ],
+      "holding_info": [
+        {
+          "idnumber": "hol16",
+          "place_id": "pla0",
+          "date": "2024-10-29",
+          "slot_id": "tim4"
+        },
+		{
+          "idnumber": "hol17",
+          "place_id": "pla0",
+          "date": "2024-10-29",
+          "slot_id": "tim5"
+        }
+      ]
+    },
+	{
+	  "idnumber": "eve10",
+      "subject_id": "sub6",
+      "kind_id": "kin2",
+      "schedule_id": "sch0",
+      "participants": [
+        "par0",
+        "par9"
+      ],
+      "holding_info": [
+        {
+          "idnumber": "hol18",
+          "place_id": "pla5",
+          "date": "2024-10-30",
+          "slot_id": "tim2"
+        },
+		{
+          "idnumber": "hol19",
+          "place_id": "pla5",
+          "date": "2024-10-30",
+          "slot_id": "tim3"
+        }
+      ]
+    },
+	{
+	  "idnumber": "eve11",
+      "subject_id": "sub6",
+      "kind_id": "kin0",
+      "schedule_id": "sch0",
+      "participants": [
+        "par0",
+        "par9"
+      ],
+      "holding_info": [
+		{
+          "idnumber": "hol20",
+          "place_id": "pla2",
+          "date": "2024-10-31",
+          "slot_id": "tim3"
+        }
+      ]
+    },
+	{
+	  "idnumber": "eve12",
+      "subject_id": "sub3",
+      "kind_id": "kin1",
+      "schedule_id": "sch0",
+      "participants": [
+        "par0",
+        "par4"
+      ],
+      "holding_info": [
+		{
+          "idnumber": "hol21",
+          "place_id": "pla3",
+          "date": "2024-10-31",
+          "slot_id": "tim4"
+        }
+      ]
+    },
+	{
+	  "idnumber": "eve13",
+      "subject_id": "sub6",
+      "kind_id": "kin1",
+      "schedule_id": "sch0",
+      "participants": [
+        "par0",
+        "par9"
+      ],
+      "holding_info": [
+		{
+          "idnumber": "hol22",
+          "place_id": "pla5",
+          "date": "2024-10-31",
+          "slot_id": "tim5"
+        }
+      ]
+    },
+	{
+	  "idnumber": "eve14",
+      "subject_id": "sub0",
+      "kind_id": "kin1",
+      "schedule_id": "sch0",
+      "participants": [
+        "par0",
+        "par1"
+      ],
+      "holding_info": [
+		{
+          "idnumber": "hol23",
+          "place_id": "pla0",
+          "date": "2024-11-1",
+          "slot_id": "tim0"
+        },
+		{
+          "idnumber": "hol24",
+          "place_id": "pla0",
+          "date": "2024-11-1",
+          "slot_id": "tim1"
+        }
+      ]
+    },
+	{
+	  "idnumber": "eve15",
+      "subject_id": "sub4",
+      "kind_id": "kin1",
+      "schedule_id": "sch0",
+      "participants": [
+        "par0",
+        "par6"
+      ],
+      "holding_info": [
+		{
+          "idnumber": "hol25",
+          "place_id": "pla5",
+          "date": "2024-11-2",
+          "slot_id": "tim0"
+        },
+		{
+          "idnumber": "hol26",
+          "place_id": "pla5",
+          "date": "2024-11-2",
+          "slot_id": "tim1"
         }
       ]
     }

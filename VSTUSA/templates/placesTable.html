@@ -1,11 +1,30 @@
 {% for date in dates %}
-    <table>
-        <div class="schedule-date-info">
-            <p>{{ weekDays|getItem:date }}</p>
-            <p>{{ date }}</p>
-            <p>{{ weekNumber|getItem:date }}-я неделя</p>
-        </div>
+<div class="schedule-date-info">
+    <p>{{ weekDays|getItem:date }}</p>
+    <p>{{ date|dateFormat }}</p>
+    <p>{{ weekNumber|getItem:date }}-я неделя</p>
+</div>
+<div style="display: flex;">
+    <table style="width: fit-content;">
+        <thead>
+            <tr>
+                {% for month in calendar|getItem:date|first %}
+                        <th style="writing-mode: vertical-rl; transform: scale(-1, -1);">{{ month }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
 
+        <tbody>
+            {% for daysEntry in calendar|getItem:date|last %}
+                <tr>
+                    {% for entry in daysEntry %}
+                        <td>{{ entry }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <table>
         <thead>
             <tr>
                 <th id='c1h{{ forloop.counter }}'>
@@ -34,6 +53,7 @@
             {% endfor %}
         </tbody>
     </table>
+</div>
 {% endfor %}
 
 <script>spanSameRows();</script>

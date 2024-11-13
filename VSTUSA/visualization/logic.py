@@ -24,22 +24,15 @@ def getDates(option : int):
 
 def dateToWeekDay(date):
     num = datetime.strptime(date, '%Y-%m-%d').date().weekday()
+    names = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресение"]
 
-    if (num == 0):
-        return "Понедельник"
-    elif (num == 1):
-        return "Вторник"
-    elif (num == 2):
-        return "Среда"
-    elif (num == 3):
-        return "Четверг"
-    elif (num == 4):
-        return "Пятница"
-    elif (num == 5):
-        return "Суббота"
-    else:
-        return "Воскресение"
+    return names[num]
     
+def numberToMonthName(num):
+    names = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"]
+    
+    return names[num - 1]
+
 def dayToWeekNumber(date):
     return "1" if datetime.strptime(date, '%Y-%m-%d').date().isocalendar()[1] % 2 == 1 else "2" 
 
@@ -78,6 +71,47 @@ def getEntries(forDate : str, filters):
         entries.append(entry)
 
     return entries
+
+def formatArray(array):
+    size = 0
+
+    for e in array:
+        if (len(e) > size):
+            size = len(e)
+
+    formatedArray = []
+
+    for i in range(size):
+        entry = []
+        for e in array:
+            if (i >= len(e)):
+                entry.append("")
+                continue
+            entry.append(e[i])
+
+        formatedArray.append(entry)
+
+    return formatedArray
+
+def getCalendar(forDate : str):
+    holding = EventHolding.objects.filter(date = forDate)[0]
+    holdings = EventHolding.objects.filter(event_id = holding.event_id)
+
+    months = []
+    daysEntry = []
+    monthDays = []
+
+    for h in holdings:
+        if (numberToMonthName(h.date.month) not in months):
+            months.append(numberToMonthName(h.date.month))
+            if (not monthDays == []):
+                daysEntry.append(monthDays)
+                monthDays = []
+        if (h.date.day not in monthDays):
+            monthDays.append(h.date.day)
+    daysEntry.append(monthDays)
+
+    return [months, formatArray(daysEntry)]
 
 def getSelectOptions(sortFilter : int):
     options = []

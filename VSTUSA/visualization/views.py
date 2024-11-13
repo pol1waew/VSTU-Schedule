@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.template.defaulttags import register
+from datetime import datetime
 from visualization.logic import *
 
 @register.filter
@@ -7,10 +8,15 @@ def getItem(_dict, key):
     _dict
     return _dict.get(key)
 
+@register.filter
+def dateFormat(date):
+    return datetime.strptime(date, "%Y-%m-%d").strftime("%d-%m-%Y")
+
 
 def index(request):
     dates = []
     entries = {}
+    calendar = {}
     weekDays = {}
     weekNumber = {}
 
@@ -28,11 +34,13 @@ def index(request):
             continue
 
         entries[date] = entry
+        calendar[date] = getCalendar(date)
         weekDays[date] = dateToWeekDay(date)
         weekNumber[date] = dayToWeekNumber(date)
 
     data = {"dates" : dates, 
             "entries" : entries, 
+            "calendar" : calendar,
             "options" : getSelectOptions(filters["sort"]),
             "weekDays" : weekDays,
             "weekNumber" : weekNumber,
