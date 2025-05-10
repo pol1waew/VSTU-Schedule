@@ -1,0 +1,19 @@
+<table style="width: fit-content;">
+    <thead>
+        <tr>
+            {% for month in calendar|getItem:date|first %}
+                    <th style="writing-mode: vertical-rl; transform: scale(-1, -1);">{{ month }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for daysEntry in calendar|getItem:date|last %}
+            <tr>
+                {% for entry in daysEntry %}
+                    <td>{{ entry }}</td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>

@@ -10,7 +10,7 @@ def getItem(_dict, key):
 
 @register.filter
 def dateFormat(date):
-    return datetime.strptime(date, "%Y-%m-%d").strftime("%d-%m-%Y")
+    return datetime.strptime(date, "%Y-%m-%d").strftime("%d.%m.%Y")
 
 
 def index(request):
