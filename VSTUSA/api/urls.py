@@ -1,4 +1,5 @@
 from django.urls import include, path
+from django.contrib import admin
 from api.views import (
     EventKindListView,
     EventViewSet,
@@ -34,3 +35,11 @@ urlpatterns = [
 ]
 
 urlpatterns += router.urls
+
+
+# login, listview, changeview page
+admin.site.site_header = "Администрирование расписания"
+# listview
+admin.site.index_title = "Администрирование расписания"
+# HTML title tag
+admin.site.site_title = "VSTU Schedule"

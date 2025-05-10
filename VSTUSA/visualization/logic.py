@@ -1,4 +1,4 @@
-from api.models import EventHolding, EventParticipant, EventPlace
+from api.models import EventParticipant, EventPlace
 from datetime import datetime
 
 def getDates(option : int):
@@ -37,6 +37,7 @@ def dayToWeekNumber(date):
     return "1" if datetime.strptime(date, '%Y-%m-%d').date().isocalendar()[1] % 2 == 1 else "2" 
 
 def getEntries(forDate : str, filters):
+    return
     entries = []
     holdings = EventHolding.objects.filter(date = forDate)
     
@@ -94,6 +95,7 @@ def formatArray(array):
     return formatedArray
 
 def getCalendar(forDate : str):
+    return
     holding = EventHolding.objects.filter(date = forDate)[0]
     holdings = EventHolding.objects.filter(event_id = holding.event_id)
 

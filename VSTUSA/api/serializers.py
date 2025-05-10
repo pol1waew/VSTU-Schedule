@@ -3,7 +3,6 @@ from rest_framework import serializers
 
 from api.models import (
     Event,
-    EventHolding,
     EventKind,
     EventParticipant,
     EventPlace,
@@ -152,74 +151,10 @@ class EventPlaceSerializer(CommonModelSerializer):
         list_serializer_class = CommonModelListSerializer
 
 
-class EventHoldingSerializer(CommonModelSerializer):
-    place = EventPlaceSerializer(label="Место")
-    time_slot = TimeSlotSerializer(label="Временной интервал")
-    date = serializers.DateField(format="iso-8601", label="Дата")
-
-    class Meta:
-        model = EventHolding
-        fields = ["place", "date", "time_slot"]
-        list_serializer_class = CommonModelListSerializer
-
-    # DRF возлагает создание и обновление объектов из вложенных сериализаторов на разработчика!
-    def create(self, validated_data):
-        place_data = validated_data.pop("place", {})
-        time_slot_data = validated_data.pop("time_slot", {})
-
-        # Используем вложенные сериализаторы для создания объектов
-        # DRF возлагает создание объектов из вложенных сериализаторов на разработчика!
-        place_id = place_data.pop("id", None)
-        place_instance = EventPlace.objects.get(id=place_id) if place_id else None
-
-        place_serializer = EventPlaceSerializer(instance=place_instance, data=place_data)
-        place_serializer.is_valid(raise_exception=True)
-        place = place_serializer.save()
-
-        timeslot_instance = TimeSlot.objects.filter(**time_slot_data).first()
-
-        time_slot_serializer = TimeSlotSerializer(instance=timeslot_instance, data=time_slot_data)
-        time_slot_serializer.is_valid(raise_exception=True)
-        time_slot = time_slot_serializer.save()
-
-        event_holding = EventHolding.objects.create(
-            place=place, time_slot=time_slot, **validated_data
-        )
-
-        return event_holding
-
-    def update(self, instance, validated_data):
-        place_data = validated_data.pop("place", None)
-        time_slot_data = validated_data.pop("time_slot", None)
-
-        if place_data:
-            place_data.pop("id", None)
-            place_serializer = EventPlaceSerializer(
-                instance.place,
-                data=place_data,
-            )
-            place_serializer.is_valid(raise_exception=True)
-            place_serializer.save()
-
-        if time_slot_data:
-            time_slot_serializer = TimeSlotSerializer(instance.time_slot, data=time_slot_data)
-            time_slot_serializer.is_valid(raise_exception=True)
-            time_slot_serializer.save()
-
-        instance.date = validated_data.get("date", instance.date)
-        self._detect_record_update(instance, validated_data)
-        instance.save()
-
-        return instance
-
-
 class EventSerializer(CommonModelSerializer):
     participants = EventParticipantSerializer(many=True, label="Участники")
     subject = SubjectSerializer(label="Предмет")
     kind = serializers.CharField(source="kind.name", label="Тип события")
-    holding_info = EventHoldingSerializer(
-        source="holdings", many=True, label="Информация о проведении"
-    )
     schedule_id = serializers.PrimaryKeyRelatedField(
         source="schedule", label="Расписание", queryset=Schedule.objects.all()
     )
@@ -231,7 +166,6 @@ class EventSerializer(CommonModelSerializer):
             "kind",
             "participants",
             "subject",
-            "holding_info",
             "schedule_id",
         ]
         list_serializer_class = CommonModelListSerializer
@@ -240,7 +174,6 @@ class EventSerializer(CommonModelSerializer):
     def create(self, validated_data):
         participants_data = validated_data.pop("participants")
         subject_data = validated_data.pop("subject")
-        holding_info_data = validated_data.pop("holdings")
         kind = validated_data.pop("kind")
 
         participants_serializer = EventParticipantSerializer(
@@ -255,12 +188,6 @@ class EventSerializer(CommonModelSerializer):
         subject_serializer.is_valid(raise_exception=True)
         subject = subject_serializer.save()
 
-        holding_info_serializer = EventHoldingSerializer(
-            EventHolding.objects.all(), data=holding_info_data, many=True
-        )
-        holding_info_serializer.is_valid(raise_exception=True)
-        holding_info = holding_info_serializer.save()
-
         kind_model = EventKind.objects.get_or_create(name=kind.get("name"))[0]
 
         event = Event.objects.create(
@@ -270,14 +197,12 @@ class EventSerializer(CommonModelSerializer):
         )
 
         event.participants.set(participants)
-        event.holdings.set(holding_info)
 
         return event
 
     def update(self, instance, validated_data):
         participants_data = validated_data.pop("participants", None)
         subject_data = validated_data.pop("subject", None)
-        holding_info_data = validated_data.pop("holdings", None)
         kind_data = validated_data.pop("kind", None)
 
         if participants_data:
@@ -292,14 +217,6 @@ class EventSerializer(CommonModelSerializer):
             subject_serializer = SubjectSerializer(instance.subject, data=subject_data)
             subject_serializer.is_valid(raise_exception=True)
             instance.subject = subject_serializer.save()
-
-        if holding_info_data:
-            holding_info_serializer = EventHoldingSerializer(
-                instance.holdings, data=holding_info_data, many=True
-            )
-            holding_info_serializer.is_valid(raise_exception=True)
-            holding_info = holding_info_serializer.save()
-            instance.holdings.set(holding_info)
 
         if kind_data:
             kind_model, _ = EventKind.objects.get_or_create(name=kind_data.get("name"))

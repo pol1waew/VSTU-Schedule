@@ -2,7 +2,6 @@ from rest_framework.exceptions import ValidationError
 
 from api.models import (
     Event,
-    EventHolding,
     EventKind,
     EventParticipant,
     EventPlace,
@@ -122,7 +121,6 @@ class JSONImporter:
 
         # Загрузка Events
         events = []
-        event_holdings = []
         for item in data.get("events", []):
             self._check_idnumber(item)
             event = Event(
@@ -133,28 +131,9 @@ class JSONImporter:
             )
             events.append(event)
 
-            # Загрузка EventHoldings
-            for holding_item in item.get("holding_info", []):
-                self._check_idnumber(holding_item)
-                event_holdings.append(
-                    EventHolding(
-                        idnumber=holding_item["idnumber"],
-                        place=EventPlace.objects.get(idnumber=holding_item["place_id"]),
-                        date=holding_item["date"],
-                        time_slot=TimeSlot.objects.get(idnumber=holding_item["slot_id"]),
-                        event=event,
-                    )
-                )
-
         Event.objects.bulk_create(
             events,
             update_conflicts=True,
             unique_fields=["idnumber"],
             update_fields=["subject", "kind", "schedule"],
-        )
-        EventHolding.objects.bulk_create(
-            event_holdings,
-            update_conflicts=True,
-            unique_fields=["idnumber"],
-            update_fields=["place", "date", "time_slot"],
         )

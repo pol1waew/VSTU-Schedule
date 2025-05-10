@@ -14,6 +14,17 @@ def dateFormat(date):
 
 
 def index(request):
+    data = {"dates" : [], 
+            "entries" : {}, 
+            "calendar" : {},
+            "options" : [],
+            "weekDays" : {},
+            "weekNumber" : {},
+            "filters" : {"date" : 2, "sort" : 0, "option" : ""}
+    }
+    
+    return render(request, "index.html", context = data)
+
     dates = []
     entries = {}
     calendar = {}

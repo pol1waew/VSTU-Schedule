@@ -81,7 +81,14 @@ class ScheduleFilter(django_filters.FilterSet):
 
     class Meta:
         model = Schedule
-        fields = ["faculty", "scope", "course", "semester", "years", "has_events"]
+        fields = [
+            "schedule_template__metadata__faculty", 
+            "schedule_template__metadata__scope", 
+            "metadata__course", 
+            "metadata__semester", 
+            "metadata__years", 
+            "has_events"
+            ]
 
     def filter_by_events(self, queryset, name, value):
         if not value:
