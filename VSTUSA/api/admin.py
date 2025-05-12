@@ -125,7 +125,7 @@ class EventAdmin(BaseAdmin):
 
 @admin.register(AbstractEvent)
 class AbstractEventAdmin(BaseAdmin):
-    list_display = ("subject", "kind", "time_slot")
+    list_display = ("datemodified", "subject", "kind", "time_slot")
     search_fields = ("subject__name", "kind__name")
     list_filter = ("kind__name",)
 

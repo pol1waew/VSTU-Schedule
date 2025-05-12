@@ -1,4 +1,4 @@
-function changeVisibility(elementId = "", entryId) {
+function change_visibility(elementId = "", entryId) {
     var cds = document.getElementsByName(elementId + "d" + entryId);
 
     if (cds[0].style.visibility == "hidden") {
@@ -17,7 +17,7 @@ function changeVisibility(elementId = "", entryId) {
     }
 }
 
-function spanSameRows() {
+function span_same_rows() {
     var tables = document.getElementsByTagName("table");
 
     for (var i = 0; i < tables.length; i++) {
@@ -29,14 +29,16 @@ function spanSameRows() {
         // length - 1 because last entry cannot have lower neighbour
         for (var n = 0; n < rows.length - 1; n++) {
             if (rows[n].children[1].textContent == rows[n + 1].children[1].textContent) {
+                rows[n + 1].deleteCell(4);
+                rows[n].children[4].rowSpan = 2;
                 rows[n + 1].deleteCell(3);
                 rows[n].children[3].rowSpan = 2;
                 rows[n + 1].deleteCell(2);
                 rows[n].children[2].rowSpan = 2;
                 rows[n + 1].deleteCell(1);
                 rows[n].children[1].rowSpan = 2;
+                n++;
             }
-            n++;
         }
     }
 }

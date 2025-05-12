@@ -1,5 +1,81 @@
-from api.models import EventParticipant, EventPlace
+from api.utilities import ReadAPI
+from api.utilityFilters import *
+from api.models import (
+    Event, 
+    EventParticipant, 
+    EventPlace
+)
 from datetime import datetime
+from collections import defaultdict
+
+
+def get_table_data(filters):
+    reader = ReadAPI()
+    
+    if filters["date"] == "today":
+        reader.add_filter(DateFilter.today())
+    elif filters["date"] == "tomorrow":
+        reader.add_filter(DateFilter.tomorrow())
+    elif filters["date"] == "this_week":
+        reader.add_filter(DateFilter.this_week())
+    elif filters["date"] == "next_week":
+        reader.add_filter(DateFilter.next_week())
+
+    if filters["group"]:
+            reader.add_filter(ParticipantFilter.by_name(filters["group"]))
+
+    if filters["place"]:
+        reader.add_filter(PlaceFilter.by_repr(filters["place"]))
+
+    if filters["subject"]:
+        reader.add_filter(SubjectFilter.by_name(filters["subject"]))
+
+    if filters["time_slot"]:
+        reader.add_filter(TimeSlotFilter.by_repr(filters["time_slot"]))
+
+    reader.find_models(Event)
+
+    if filters["teacher"]:
+        return format_events(reader.get_found_models().filter(**ParticipantFilter.by_name(filters["teacher"])).distinct())
+    else:
+        return format_events(reader.get_found_models())
+
+def format_events(events):
+    events = events.order_by("time_slot_override__start_time", "date")
+
+    # grouping by date
+    grouped_events = defaultdict(list)
+
+    for e in events:
+        grouped_events[e.date].append(e)
+
+    entries = list(grouped_events.values())
+
+    row_spans = []
+
+    for entry in entries:
+        row_spans.append([])
+        prev_event_expanded = False
+
+        for i in range(0, len(entry) - 1):
+            if prev_event_expanded:
+                row_spans[len(row_spans) - 1].append(0)
+                prev_event_expanded = False
+                continue
+
+            if entry[i].subject_override == entry[i + 1].subject_override:
+                row_spans[len(row_spans) - 1].append(2)
+                prev_event_expanded = True
+            else:
+                row_spans[len(row_spans) - 1].append(1)
+            
+    return zip(entries, row_spans)
+
+
+
+
+
+
 
 def getDates(option : int):
     dates = []
@@ -36,42 +112,7 @@ def numberToMonthName(num):
 def dayToWeekNumber(date):
     return "1" if datetime.strptime(date, '%Y-%m-%d').date().isocalendar()[1] % 2 == 1 else "2" 
 
-def getEntries(forDate : str, filters):
-    return
-    entries = []
-    holdings = EventHolding.objects.filter(date = forDate)
     
-    if (filters["option"] == ""):
-        holdings = EventHolding.objects.filter(date = forDate)
-    else:
-        if (filters["sort"] == 0 or filters["sort"] == 1):
-            holdings = EventHolding.objects.filter(date = forDate, event__participants__name = filters["option"])
-        else:
-            holdings = EventHolding.objects.filter(date = forDate, 
-                                                   place__building = filters["option"].split(" ", 1)[0], 
-                                                   place__room = filters["option"].split(" ", 1)[1])        
-
-    for hold in holdings:
-        entry = {}
-        
-        entry["start_time"] = hold.time_slot.start_time
-        entry["end_time"] = hold.time_slot.end_time
-        entry["subject"] = hold.event.subject.name
-        if (filters["sort"] == 0 or filters["sort"] == 2):
-            participants = EventParticipant.objects.filter(event = hold.event, role = "teacher")
-            for p in participants:
-                entry["teacher"] = p.name
-        if (filters["sort"] == 1 or filters["sort"] == 2):
-            participants = EventParticipant.objects.filter(event = hold.event, role = "student")
-            for p in participants:
-                entry["group"] = p.name
-        if (not filters["sort"] == 2):
-            entry["place_building"] = hold.place.building
-            entry["place_room"] = hold.place.room
-
-        entries.append(entry)
-
-    return entries
 
 def formatArray(array):
     size = 0

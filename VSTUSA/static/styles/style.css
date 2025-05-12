@@ -4,12 +4,12 @@ header {
     margin-bottom: 30px;
 }
 
-.header-container {
-    display: inline-block;
+header button {
+    padding: 10px 30px;
 }
 
-header select {
-    padding: 5px 30px;
+.select2-container {
+    width: 15% !important;
 }
 
 table {
@@ -48,6 +48,15 @@ th {
     background-color: lightgrey;
     padding-top: 10px;
     padding-bottom: 10px;
+}
+
+td {
+    line-height: 5px;
+}
+
+.canceled-row {
+    background-color: lightpink !important;
+    text-decoration: line-through;
 }
 
 tr:nth-child(even) {

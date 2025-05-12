@@ -1,11 +1,23 @@
-from django.db.models import QuerySet
+from django.db.models import QuerySet, Q
 from datetime import date, timedelta
 import api.utilityFilters as filters
 from itertools import islice
 from api.models import (
     CommonModel,
     AbstractEvent,
-    Event, 
+    AbstractDay,
+    ScheduleTemplateMetadata,
+    ScheduleMetadata,
+    ScheduleTemplate,
+    Schedule,
+    Department,
+    Organization,
+    Event,
+    EventKind,
+    EventParticipant,
+    EventPlace,
+    Subject,
+    TimeSlot,
     DayDateOverride,
     EventCancel
 )
@@ -14,7 +26,6 @@ from api.models import (
 class Utilities:
     def __init__(self):
         pass
-
 
     pass
 
@@ -27,50 +38,55 @@ class ReadAPI:
     def __init__(self, filter_query : dict = None):
         self.filter_query = filter_query or {}
 
-
     def add_filter(self, filter : filters.UtilityFilterBase):
         """Updates filter query by adding new filter
 
         Allows user manualy append filters in format {'field_name' : value}
         """
-
+        
         self.filter_query.update(filter)
-
 
     def remove_filter(self, index : int):
         if index < len(self.filter_query):
             del self.filter_query[next(islice(self.filter_query, index, None))]
 
-
     def remove_first_filter(self):
         self.remove_filter(0)
-
 
     def remove_last_filter(self):
         self.remove_filter(len(self.filter_query) - 1)
 
-
     def clear_filter_query(self):
         self.filter_query = {}
-
 
     def find_models(self, model : CommonModel):
         """Finds filtered models
         """
-
+        
         self.found_models = model.objects.filter(**self.filter_query)
-
 
     def get_found_models(self):
         return self.found_models
     
-
-    '''
-    def get_teachers(self):
-        print(self.found_data.values())'
-        '''
-
-    ## get расписание преподавателей для ПОАС
+    @staticmethod
+    def get_all_teachers():
+        return EventParticipant.objects.filter(role__in=[EventParticipant.Role.TEACHER, EventParticipant.Role.ASSISTANT])
+    
+    @staticmethod
+    def get_all_groups():
+        return EventParticipant.objects.filter(is_group=True)
+    
+    @staticmethod
+    def get_all_places():
+        return EventPlace.objects.all()
+    
+    @staticmethod
+    def get_all_subjects():
+        return Subject.objects.all()
+    
+    @staticmethod
+    def get_all_time_slots():
+        return TimeSlot.objects.all()
 
 
 class WriteAPI:
@@ -97,7 +113,6 @@ class WriteAPI:
 
         event.participants_override.add(*abstract_event.participants.all())
         event.places_override.add(*abstract_event.places.all())
-
 
     @staticmethod
     def get_semester_filling_parameters(abstract_event : AbstractEvent):
@@ -132,7 +147,6 @@ class WriteAPI:
                 abstract_event.schedule.end_date, \
                 fill_from_date, \
                 abstract_event.schedule.schedule_template.repetition_period
-
 
     @classmethod
     def fill_semester(cls, abstract_event : AbstractEvent):
@@ -179,7 +193,6 @@ class WriteAPI:
 
             reader.remove_last_filter()
 
-    
     @classmethod
     def fill_event_table(cls, abstract_events, full_clear = False):
         """Clear event table and fill it from abstract_events
@@ -215,7 +228,6 @@ class WriteAPI:
                 
         return True
     
-
     @classmethod
     def override_event_date(cls, override : DayDateOverride, event : Event):
         """Apply DayDateOverride to given events
@@ -231,7 +243,6 @@ class WriteAPI:
             event.date_override = None
 
         event.save()
-
 
     @staticmethod
     def update_event_canceling(event_cancel : EventCancel, event : Event, call_save_method : bool = True):

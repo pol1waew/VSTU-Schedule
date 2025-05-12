@@ -1,5 +1,4 @@
 from typing import Optional, Self
-
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -268,6 +267,7 @@ class EventParticipant(CommonModel):
         return f"{self.name} ({self.role})"
 
 
+# need manualy fill semester
 class AbstractEvent(CommonModel):
     class Meta:
         verbose_name = "Абстрактное событие"
@@ -321,6 +321,28 @@ class EventCancel(CommonModel):
         
         for e in reader.get_found_models():
             WriteAPI.update_event_canceling(self, e)
+
+# if EventCancel moved to other date
+# need to undo canceling
+@receiver(pre_save, sender=EventCancel)
+def on_event_cancel_date_override(sender, instance, **kwargs):
+    created = instance.pk is None
+
+    if created:
+        return
+    
+    previous_cancel = EventCancel.objects.get(pk=instance.pk)
+
+    # if Event was created or date changed
+    if not created and previous_cancel.date != instance.date:
+        from api.utilities import WriteAPI, ReadAPI
+
+        reader = ReadAPI({"event_cancel" : previous_cancel})
+        
+        reader.find_models(Event)
+        
+        for e in reader.get_found_models():
+            WriteAPI.update_event_canceling(None, e)
 
 @receiver(pre_delete, sender=EventCancel)
 def on_event_cancel_delete(sender, instance, **kwargs):
@@ -391,6 +413,12 @@ class Event(CommonModel):
     @property
     def department(self):
         return self.abstract_event.schedule.schedule_template.department
+    
+    def get_groups(self):
+        return self.participants_override.filter(is_group=True)
+    
+    def get_teachers(self):
+        return self.participants_override.filter(role__in=[EventParticipant.Role.TEACHER, EventParticipant.Role.ASSISTANT])
 
     def __repr__(self):
         return f"Занятие по {self.abstract_event.subject.name}"
@@ -406,7 +434,7 @@ def on_event_save(sender, instance, **kwargs):
     # if Event was created or date changed
     if created or previous_event.date != instance.date:
         # skip manualy canceled events
-        if previous_event.is_event_canceled and not previous_event.event_cancel:
+        if not created and previous_event.is_event_canceled and not previous_event.event_cancel:
             return
 
         from api.utilities import WriteAPI, ReadAPI

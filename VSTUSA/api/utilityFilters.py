@@ -3,6 +3,7 @@ from datetime import date, timedelta
 from api.models import (
     Event,
 )
+import re
 
 
 class UtilityFilterBase:
@@ -73,6 +74,26 @@ class ParticipantFilter(UtilityFilterBase):
     
 
 class PlaceFilter(UtilityFilterBase):
+    @classmethod
+    def by_repr(cls, repr : str|list[str]):
+        """
+        Use list of places repr for OR behaviour
+        """
+
+        building = []
+        room = []
+
+        for r in repr:
+            splited = r.split(" ", 1)
+
+            building.append(splited[0])
+            room.append(splited[1])
+
+        fitler_ = cls.by_building(building)
+        fitler_.update(cls.by_room(room))
+
+        return fitler_
+
     @staticmethod
     def by_building(building : str|list[str]):
         """
@@ -107,6 +128,23 @@ class SubjectFilter(UtilityFilterBase):
             return {"subject_override__name__in" : name}
 
         return {"subject_override__name" : name}
+    
+
+class TimeSlotFilter(UtilityFilterBase):
+    @staticmethod
+    def by_repr(repr : str|list[str]):
+        """
+        Use list of time slots repr for OR behaviour
+        """
+
+        alt_name = []
+        for r in repr:
+            alt_name.append(re.search(r"\d{1,2}\D+\d{1,2}", r)[0])
+
+        if type(repr) is list:
+            return {"time_slot_override__alt_name__in" : alt_name}
+
+        return {"time_slot_override__alt_name" : alt_name}
 
 
 class EventFilter(UtilityFilterBase):
