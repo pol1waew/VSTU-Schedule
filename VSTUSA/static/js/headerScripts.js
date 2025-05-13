@@ -39,6 +39,14 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
     $(document).ready(function() {
+        $(".kind-pillbox").select2({
+            placeholder : "Тип предмета",
+            allowClear : true,
+            closeOnSelect : false
+        });
+    });
+
+    $(document).ready(function() {
         $(".time-slot-pillbox").select2({
             placeholder : "Время проведения",
             allowClear : true,

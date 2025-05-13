@@ -119,7 +119,7 @@ class PlaceFilter(UtilityFilterBase):
 
 class SubjectFilter(UtilityFilterBase):
     @staticmethod
-    def by_name(name):
+    def by_name(name : str|list[str]):
         """
         Use list of subject names for OR behaviour
         """
@@ -145,6 +145,19 @@ class TimeSlotFilter(UtilityFilterBase):
             return {"time_slot_override__alt_name__in" : alt_name}
 
         return {"time_slot_override__alt_name" : alt_name}
+    
+
+class KindFilter(UtilityFilterBase):
+    @staticmethod
+    def by_name(name : str|list[str]):
+        """
+        Use list of subject names for OR behaviour
+        """
+
+        if type(name) is list:
+            return {"kind_override__name__in" : name}
+
+        return {"kind_override__name" : name}
 
 
 class EventFilter(UtilityFilterBase):

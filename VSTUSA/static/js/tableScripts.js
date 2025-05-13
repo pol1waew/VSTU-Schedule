@@ -16,29 +16,3 @@ function change_visibility(elementId = "", entryId) {
         document.getElementById(elementId + "h"  + entryId).style.width = "0%";
     }
 }
-
-function span_same_rows() {
-    var tables = document.getElementsByTagName("table");
-
-    for (var i = 0; i < tables.length; i++) {
-        var rows = document.getElementsByName('r' + (i + 1));
-        
-        // If day contains only one lesson skip that day
-        if (rows.length == 1) continue;
-
-        // length - 1 because last entry cannot have lower neighbour
-        for (var n = 0; n < rows.length - 1; n++) {
-            if (rows[n].children[1].textContent == rows[n + 1].children[1].textContent) {
-                rows[n + 1].deleteCell(4);
-                rows[n].children[4].rowSpan = 2;
-                rows[n + 1].deleteCell(3);
-                rows[n].children[3].rowSpan = 2;
-                rows[n + 1].deleteCell(2);
-                rows[n].children[2].rowSpan = 2;
-                rows[n + 1].deleteCell(1);
-                rows[n].children[1].rowSpan = 2;
-                n++;
-            }
-        }
-    }
-}

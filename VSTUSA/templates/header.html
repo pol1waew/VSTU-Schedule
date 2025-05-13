@@ -28,7 +28,7 @@
 
         <button onclick="this.form.submit()" style="margin-left: 20px;">Показать</button>
 
-        <div style="margin: 20px 0px;">
+        <div style="margin-top: 20px;">
             <button type="button" id="filters-button" onclick="update_filters_visibility()">
                 {% if addition_filters_visible == "1" %}
                     Меньше фильтров
@@ -40,7 +40,7 @@
             <input type="hidden" id="filters-visibility-state" name="addition_filters_visible" value={{ addition_filters_visible }}>
         </div>
         
-        <div class="addition-filters" id="filters-container"
+        <div class="filters-container" id="filters-container"
         {% if addition_filters_visible == "1" %}
             style="display: block;"
         {% else %}
@@ -50,6 +50,12 @@
             <select class="subject-pillbox" name="subject[]" multiple="multiple">
                 {% for subject in subjects %}
                     <option value="{{ subject }}" {% if subject in selected.subject %} selected {% endif %}>{{ subject }}</option>
+                {% endfor %}
+            </select>
+
+            <select class="kind-pillbox" name="kind[]" multiple="multiple">
+                {% for kind in kinds %}
+                    <option value="{{ kind }}" {% if kind in selected.kind %} selected {% endif %}>{{ kind }}</option>
                 {% endfor %}
             </select>
 

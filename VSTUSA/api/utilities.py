@@ -85,6 +85,10 @@ class ReadAPI:
         return Subject.objects.all()
     
     @staticmethod
+    def get_all_kinds():
+        return EventKind.objects.all()
+    
+    @staticmethod
     def get_all_time_slots():
         return TimeSlot.objects.all()
 

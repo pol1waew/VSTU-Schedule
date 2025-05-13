@@ -4,6 +4,12 @@ from django.template.defaulttags import register
 from datetime import datetime
 from visualization.logic import *
 
+@register.filter
+def list_item(list_, i):
+    try:
+        return list_[i - 1]
+    except:
+        return None
 
 @register.filter
 def dateFormat(date):
@@ -17,6 +23,7 @@ def index(request):
         "teacher" : "",
         "place" : "",
         "subject" : "",
+        "kind" : "",
         "time_slot" : ""
     }
 
@@ -37,6 +44,9 @@ def index(request):
 
         if "subject[]" in request.POST:
             selected["subject"] = request.POST.getlist("subject[]") 
+
+        if "kind[]" in request.POST:
+            selected["kind"] = request.POST.getlist("kind[]") 
             
         if "time_slot[]" in request.POST:
             selected["time_slot"] = request.POST.getlist("time_slot[]") 
@@ -47,9 +57,11 @@ def index(request):
     places = [str(p) for p in ReadAPI.get_all_places()]
 
     subjects = ReadAPI.get_all_subjects().values_list("name", flat=True)
+    kinds = ReadAPI.get_all_kinds().values_list("name", flat=True)
     time_slots = [str(ts) for ts in ReadAPI.get_all_time_slots()]
 
     entries = get_table_data(selected)
+    print(entries)
 
     data = {"selected" : selected,
             "groups" : groups,
@@ -57,6 +69,7 @@ def index(request):
             "places" : places,
 
             "subjects" : subjects,
+            "kinds" : kinds,
             "time_slots" : time_slots,
 
             "entries" : entries,

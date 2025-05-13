@@ -8,6 +8,10 @@ header button {
     padding: 10px 30px;
 }
 
+.filters-container {
+    margin-top: 20px;
+}
+
 .select2-container {
     width: 15% !important;
 }

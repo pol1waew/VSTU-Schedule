@@ -22,13 +22,16 @@ def get_table_data(filters):
         reader.add_filter(DateFilter.next_week())
 
     if filters["group"]:
-            reader.add_filter(ParticipantFilter.by_name(filters["group"]))
+        reader.add_filter(ParticipantFilter.by_name(filters["group"]))
 
     if filters["place"]:
         reader.add_filter(PlaceFilter.by_repr(filters["place"]))
 
     if filters["subject"]:
         reader.add_filter(SubjectFilter.by_name(filters["subject"]))
+        
+    if filters["kind"]:
+        reader.add_filter(KindFilter.by_name(filters["kind"]))
 
     if filters["time_slot"]:
         reader.add_filter(TimeSlotFilter.by_repr(filters["time_slot"]))
@@ -57,19 +60,32 @@ def format_events(events):
         row_spans.append([])
         prev_event_expanded = False
 
-        for i in range(0, len(entry) - 1):
+        for i in range(0, len(entry)):
+            # if previous row expanded
+            # need to collaspe current
             if prev_event_expanded:
                 row_spans[len(row_spans) - 1].append(0)
                 prev_event_expanded = False
                 continue
+            
+            # cant wrap rows with canceled events
+            if entry[i].is_event_canceled == True:
+                row_spans[len(row_spans) - 1].append(1)
+                continue
 
-            if entry[i].subject_override == entry[i + 1].subject_override:
+            # skip last row
+            if i + 1 >= len(entry):
+                row_spans[len(row_spans) - 1].append(1)
+                continue
+
+            if entry[i].subject_override == entry[i + 1].subject_override and \
+                abs(entry[i].time_slot_override.pk - entry[i + 1].time_slot_override.pk) == 1:
                 row_spans[len(row_spans) - 1].append(2)
                 prev_event_expanded = True
             else:
                 row_spans[len(row_spans) - 1].append(1)
             
-    return zip(entries, row_spans)
+    return list(zip(entries, row_spans))
 
 
 
