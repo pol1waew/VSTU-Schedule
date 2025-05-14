@@ -162,9 +162,8 @@ class WriteAPI:
         if abstract_event.holds_on_date != None:
             cls.create_event(abstract_event.holds_on_date, abstract_event)
         else:
-            semester_start_date, semester_end_date, fill_from_date, repetition_period = cls.get_semester_filling_parameters(abstract_event)
+            semester_start_date, semester_end_date, date, repetition_period = cls.get_semester_filling_parameters(abstract_event)
 
-            date = fill_from_date
             while date < semester_end_date:
                 if date >= semester_start_date:
                     cls.create_event(date, abstract_event)

@@ -60,8 +60,8 @@ def index(request):
     kinds = ReadAPI.get_all_kinds().values_list("name", flat=True)
     time_slots = [str(ts) for ts in ReadAPI.get_all_time_slots()]
 
-    entries = get_table_data(selected)
-    print(entries)
+    data = get_table_data(selected)
+    print(data)
 
     data = {"selected" : selected,
             "groups" : groups,
@@ -72,7 +72,7 @@ def index(request):
             "kinds" : kinds,
             "time_slots" : time_slots,
 
-            "entries" : entries,
+            "data" : data,
 
             "addition_filters_visible" : request.POST.get("addition_filters_visible") if "addition_filters_visible" in request.POST else "0"
     }
@@ -80,7 +80,7 @@ def index(request):
     return render(request, "index.html", context = data)
 
     dates = []
-    entries = {}
+    data = {}
     calendar = {}
     weekDays = {}
     weekNumber = {}
@@ -98,13 +98,13 @@ def index(request):
             dates.remove(date)
             continue
 
-        entries[date] = entry
+        data[date] = entry
         calendar[date] = getCalendar(date)
         weekDays[date] = dateToWeekDay(date)
         weekNumber[date] = dayToWeekNumber(date)
 
     data = {"dates" : dates, 
-            "entries" : entries, 
+            "entries" : data, 
             "calendar" : calendar,
             "options" : getSelectOptions(filters["sort"]),
             "weekDays" : weekDays,

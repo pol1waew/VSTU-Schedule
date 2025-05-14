@@ -1,26 +1,28 @@
-{% for entry, row_spans in entries %}
+{% for entry, row_spans, calendar in data %}
     <div class="schedule-date-info">
         <p>{{ entry.0.date }}</p>
         <p>{{ entry.0.abstract_event.abstract_day.name }}</p>
     </div>
 
     <div style="display: flex;">
-        <table>
+        {% include "calendarTable.html" %}
+
+        <table class="entries-table">
             <thead>
                 <tr>
-                    <th id='c1h{{ forloop.counter }}'>
+                    <th id="c1h{{ forloop.counter }}">
                         <button onclick="change_visibility('c1', '{{ forloop.counter }}')">Время</button>
                     </th>
-                    <th id='c2h{{ forloop.counter }}'>
+                    <th id="c2h{{ forloop.counter }}">
                         <button onclick="change_visibility('c2', '{{ forloop.counter }}')">Предмет</button>
                     </th>
-                    <th id='c3h{{ forloop.counter }}'>
+                    <th id="c3h{{ forloop.counter }}">
                         <button onclick="change_visibility('c3', '{{ forloop.counter }}')">Группа</button>
                     </th>
-                    <th id='c4h{{ forloop.counter }}'>
+                    <th id="c4h{{ forloop.counter }}">
                         <button onclick="change_visibility('c4', '{{ forloop.counter }}')">Преподаватель</button>
                     </th>
-                    <th id='c5h{{ forloop.counter }}'>
+                    <th id="c5h{{ forloop.counter }}">
                         <button onclick="change_visibility('c5', '{{ forloop.counter }}')">Аудитория</button>
                     </th>
                 </tr>
@@ -33,22 +35,24 @@
                         class="canceled-row"
                     {% endif %}
                     name="r{{ forloop.parentloop.counter }}">
-                        <td name='c1d{{ forloop.parentloop.counter }}'>{{ event.time_slot_override.start_time }} - {{ event.time_slot_override.end_time }}</td>
+                        <td name="c1d{{ forloop.parentloop.counter }}">
+                            {{ event.time_slot_override.start_time }} - {{ event.time_slot_override.end_time }}
+                        </td>
                         {% if row_spans|list_item:forloop.counter != 0 %}
-                            <td name='c2d{{ forloop.parentloop.counter }}' rowspan="{{ row_spans|list_item:forloop.counter }}">
+                            <td name="c2d{{ forloop.parentloop.counter }}" rowspan="{{ row_spans|list_item:forloop.counter }}">
                                 {{ event.subject_override }} ({{ event.kind_override }})
                             </td>
-                            <td name='c3d{{ forloop.parentloop.counter }}' rowspan="{{ row_spans|list_item:forloop.counter }}">
+                            <td name="c3d{{ forloop.parentloop.counter }}" rowspan="{{ row_spans|list_item:forloop.counter }}">
                                 {% for group in event.get_groups.all %}
                                     {{ group.name|linebreaks }}
                                 {% endfor %}
                             </td>
-                            <td name='c4d{{ forloop.parentloop.counter }}' rowspan="{{ row_spans|list_item:forloop.counter }}">
+                            <td name="c4d{{ forloop.parentloop.counter }}" rowspan="{{ row_spans|list_item:forloop.counter }}">
                                 {% for teacher in event.get_teachers.all %}
                                     {{ teacher.name|linebreaks }}
                                 {% endfor %}
                             </td>
-                            <td name='c5d{{ forloop.parentloop.counter }}' rowspan="{{ row_spans|list_item:forloop.counter }}">
+                            <td name="c5d{{ forloop.parentloop.counter }}" rowspan="{{ row_spans|list_item:forloop.counter }}">
                                 {% for place in event.places_override.all %}
                                     {{ place|linebreaks }}
                                 {% endfor %}

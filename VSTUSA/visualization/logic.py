@@ -1,4 +1,4 @@
-from api.utilities import ReadAPI
+from api.utilities import ReadAPI, WriteAPI
 from api.utilityFilters import *
 from api.models import (
     Event, 
@@ -39,9 +39,15 @@ def get_table_data(filters):
     reader.find_models(Event)
 
     if filters["teacher"]:
-        return format_events(reader.get_found_models().filter(**ParticipantFilter.by_name(filters["teacher"])).distinct())
+        entries = format_events(reader.get_found_models().filter(**ParticipantFilter.by_name(filters["teacher"])).distinct())
     else:
-        return format_events(reader.get_found_models())
+        entries = format_events(reader.get_found_models())
+
+    row_spans = get_row_spans(entries)
+
+    calendar = get_calendar(entries)
+
+    return list(zip(entries, row_spans, calendar))
 
 def format_events(events):
     events = events.order_by("time_slot_override__start_time", "date")
@@ -52,8 +58,10 @@ def format_events(events):
     for e in events:
         grouped_events[e.date].append(e)
 
-    entries = list(grouped_events.values())
+    return list(grouped_events.values())
 
+
+def get_row_spans(entries):
     row_spans = []
 
     for entry in entries:
@@ -84,10 +92,59 @@ def format_events(events):
                 prev_event_expanded = True
             else:
                 row_spans[len(row_spans) - 1].append(1)
+
+    return row_spans
+
+
+def get_month_name(i):
+    '''Returns month name from month number
+    '''
+    MONTH_NAMES = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"]
+    
+    return MONTH_NAMES[i - 1]
+
+
+def get_calendar(entries):
+    calendar = []
+    dates = [1, 2, 3]
+
+    for entry in entries:
+        # list of monthes to show
+        monthes = []
+        # list of days for every month to show
+        days = []
+        dates = []
+        start_date, end_date, date, repetition_period = WriteAPI.get_semester_filling_parameters(entry[0].abstract_event)
+
+        while date < end_date:
+            if date >= start_date:
+                dates.append(date)
             
-    return list(zip(entries, row_spans))
+            date += timedelta(days=repetition_period)
 
+        m = start_date.month
+        while m <= end_date.month:
+            monthes.append(get_month_name(m))
 
+            # list will be empty if month havent any studying day
+            days.append([])
+            for d in reversed(dates):
+                if d.month == m:
+                    days[len(days) - 1].append(d.day)
+                    dates.remove(d)
+
+            days[len(days) - 1].sort()
+
+            m += 1
+
+        calendar.append([])
+        calendar[len(calendar) - 1].append(monthes)
+        calendar[len(calendar) - 1].append(format_days(days))
+            
+        # calendar can be buided from first event in entry
+        continue
+
+    return calendar
 
 
 
@@ -120,36 +177,36 @@ def dateToWeekDay(date):
 
     return names[num]
     
-def numberToMonthName(num):
-    names = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"]
-    
-    return names[num - 1]
+
 
 def dayToWeekNumber(date):
     return "1" if datetime.strptime(date, '%Y-%m-%d').date().isocalendar()[1] % 2 == 1 else "2" 
 
     
 
-def formatArray(array):
-    size = 0
+def format_days(days : list):
+    '''
+    Transform days order from column (column like month) into row oriented
+    '''
+    
+    max_days_count = 0
+    formated_days = []
 
-    for e in array:
-        if (len(e) > size):
-            size = len(e)
+    for d in days:
+        if (len(d) > max_days_count):
+            max_days_count = len(d)
 
-    formatedArray = []
-
-    for i in range(size):
-        entry = []
-        for e in array:
-            if (i >= len(e)):
-                entry.append("")
+    for i in range(max_days_count):
+        row = []
+        for d in days:
+            if (i >= len(d)):
+                row.append("")
                 continue
-            entry.append(e[i])
+            row.append(d[i])
 
-        formatedArray.append(entry)
+        formated_days.append(row)
 
-    return formatedArray
+    return formated_days
 
 def getCalendar(forDate : str):
     return
@@ -161,8 +218,8 @@ def getCalendar(forDate : str):
     monthDays = []
 
     for h in holdings:
-        if (numberToMonthName(h.date.month) not in months):
-            months.append(numberToMonthName(h.date.month))
+        if (get_month_name(h.date.month) not in months):
+            months.append(get_month_name(h.date.month))
             if (not monthDays == []):
                 daysEntry.append(monthDays)
                 monthDays = []
@@ -170,22 +227,4 @@ def getCalendar(forDate : str):
             monthDays.append(h.date.day)
     daysEntry.append(monthDays)
 
-    return [months, formatArray(daysEntry)]
-
-def getSelectOptions(sortFilter : int):
-    options = []
-
-    if (sortFilter == 0):
-        participants = EventParticipant.objects.filter(role = "student")
-        for p in participants:
-            options.append(p.name)
-    elif (sortFilter == 1):
-        participants = EventParticipant.objects.filter(role = "teacher")
-        for p in participants:
-            options.append(p.name)
-    else:
-        places = EventPlace.objects.all()
-        for p in places:
-            options.append(p.building + " " + p.room)
-
-    return options
+    return [months, format_days(daysEntry)]

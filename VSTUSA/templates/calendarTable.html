@@ -1,17 +1,17 @@
-<table style="width: fit-content;">
+<table class="calendar-table">
     <thead>
         <tr>
-            {% for month in calendar|getItem:date|first %}
-                    <th style="writing-mode: vertical-rl; transform: scale(-1, -1);">{{ month }}</th>
+            {% for month in calendar.0 %}
+                <th style="writing-mode: vertical-rl; transform: scale(-1, -1);">{{ month }}</th>
             {% endfor %}
         </tr>
     </thead>
 
     <tbody>
-        {% for daysEntry in calendar|getItem:date|last %}
+        {% for days in calendar.1 %}
             <tr>
-                {% for entry in daysEntry %}
-                    <td>{{ entry }}</td>
+                {% for day in days %}
+                    <td>{{ day }}</td>
                 {% endfor %}
             </tr>
         {% endfor %}

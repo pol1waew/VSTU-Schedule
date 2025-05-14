@@ -14,7 +14,7 @@
     <body>
         {% include "header.html" %}
 
-        {% if entries|length == 0 %}
+        {% if data|length == 0 %}
             {% include "emptyTable.html" %}
         {% else %}
             {% include "table.html" %}            
