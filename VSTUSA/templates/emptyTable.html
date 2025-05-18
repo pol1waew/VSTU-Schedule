@@ -1,11 +1,29 @@
 {% if selected.date == "today" %}
     <h1>Сегодня
+
 {% elif selected.date == "tomorrow" %}
     <h1>Завтра
+
 {% elif selected.date == "this_week" %}
     <h1>На этой неделе
+
 {% elif selected.date == "next_week" %}
     <h1>На следующей неделе
+
+{% elif selected.date == "single_date" %}
+    {% if selected.left_date != "" %}
+        <h1>{{ selected.left_date }}
+    {% else %}
+        <h1>На выбранную дату
+    {% endif %}
+
+{% elif selected.date == "range_date" %}
+    {% if selected.left_date != "" and selected.right_date != "" %}
+        <h1>С {{ selected.left_date }} по {{ selected.right_date }}
+    {% else %}
+        <h1>На выбранный диапазон дат
+    {% endif %}
 {% endif %}
+
     нет занятий
 </h1>

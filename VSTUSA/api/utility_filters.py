@@ -27,18 +27,28 @@ class DateFilter(UtilityFilterBase):
         return DateFilter.from_singe_date(date.today() + timedelta(days=1))
 
     @staticmethod
-    def from_range(date_ : str|date, left_range : int, right_range : int):
+    def from_date(from_date : str|date, to_date : str|date):
+        if isinstance(from_date, str):
+            from_date = date.fromisoformat(from_date)
+        
+        if isinstance(to_date, str):
+            to_date = date.fromisoformat(to_date)
+        
+        return {"date__range" : [from_date, to_date]}
+    
+    @staticmethod
+    def around_date(date_ : str|date, left_range : int, right_range : int):
         if isinstance(date_, str):
             date_ = date.fromisoformat(date_)
         
-        left_interval_date = date_ - timedelta(days=left_range)
-        right_interval_date = date_ + timedelta(days=right_range)
+        left_date = date_ - timedelta(days=left_range)
+        right_date = date_ + timedelta(days=right_range)
 
-        return {"date__range" : [left_interval_date, right_interval_date]}
+        return {"date__range" : [left_date, right_date]}
     
     @staticmethod
     def take_whole_week(date_):
-        return DateFilter.from_range(date_, date_.weekday(), 6 - date_.weekday())
+        return DateFilter.around_date(date_, date_.weekday(), 6 - date_.weekday())
 
     @staticmethod
     def this_week():
@@ -148,6 +158,7 @@ class TimeSlotFilter(UtilityFilterBase):
     
 
 class KindFilter(UtilityFilterBase):
+    """ только для event """
     @staticmethod
     def by_name(name : str|list[str]):
         """

@@ -1,11 +1,6 @@
 from api.utilities import ReadAPI, WriteAPI
-from api.utilityFilters import *
-from api.models import (
-    Event, 
-    EventParticipant, 
-    EventPlace
-)
-from datetime import datetime
+from api.utility_filters import *
+from api.models import Event
 from collections import defaultdict
 
 
@@ -20,6 +15,10 @@ def get_table_data(filters):
         reader.add_filter(DateFilter.this_week())
     elif filters["date"] == "next_week":
         reader.add_filter(DateFilter.next_week())
+    elif filters["date"] == "single_date" and filters["left_date"] != "":
+        reader.add_filter(DateFilter.from_singe_date(filters["left_date"]))
+    elif filters["date"] == "range_date" and filters["left_date"] != "" and filters["right_date"] != "":
+        reader.add_filter(DateFilter.from_date(filters["left_date"], filters["right_date"]))
 
     if filters["group"]:
         reader.add_filter(ParticipantFilter.by_name(filters["group"]))
@@ -146,44 +145,6 @@ def get_calendar(entries):
 
     return calendar
 
-
-
-
-
-def getDates(option : int):
-    dates = []
-
-    if (option == 0):
-        dates = ["2024-10-21"]
-    elif (option == 1):
-        dates = ["2024-10-22"]
-    elif (option == 2):
-        dates = ["2024-10-21", "2024-10-22", "2024-10-23", "2024-10-24", "2024-10-25", "2024-10-26", "2024-10-27"]
-    elif (option == 3):
-        dates = ["2024-10-28", "2024-10-29", "2024-10-30", "2024-10-31", "2024-11-1", "2024-11-2", "2024-11-3"]
-
-    return dates
-
-    # remove dates with no lessons
-    for d in reversed(dates):
-        if (EventHolding.objects.filter(date = d).first() == None):
-            dates.remove(d)
-
-    return dates
-
-def dateToWeekDay(date):
-    num = datetime.strptime(date, '%Y-%m-%d').date().weekday()
-    names = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресение"]
-
-    return names[num]
-    
-
-
-def dayToWeekNumber(date):
-    return "1" if datetime.strptime(date, '%Y-%m-%d').date().isocalendar()[1] % 2 == 1 else "2" 
-
-    
-
 def format_days(days : list):
     '''
     Transform days order from column (column like month) into row oriented
@@ -208,23 +169,14 @@ def format_days(days : list):
 
     return formated_days
 
-def getCalendar(forDate : str):
-    return
-    holding = EventHolding.objects.filter(date = forDate)[0]
-    holdings = EventHolding.objects.filter(event_id = holding.event_id)
+def get_POST_value(POST, name):
+    value = ""
 
-    months = []
-    daysEntry = []
-    monthDays = []
+    if name in POST:
+        value = POST.getlist(name)
 
-    for h in holdings:
-        if (get_month_name(h.date.month) not in months):
-            months.append(get_month_name(h.date.month))
-            if (not monthDays == []):
-                daysEntry.append(monthDays)
-                monthDays = []
-        if (h.date.day not in monthDays):
-            monthDays.append(h.date.day)
-    daysEntry.append(monthDays)
+        # converts single value array into value
+        if type(value) is list and len(value) == 1:
+            value = value[0]
 
-    return [months, format_days(daysEntry)]
+    return value

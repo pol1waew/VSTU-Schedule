@@ -1,35 +1,46 @@
 <form action="" method="post">
     {% csrf_token %}
     <header>
-        <select class="date-select" name="date">
-            <option value="today" {% if selected.date == "today" %} selected {% endif %}>На сегодня</option>
-            <option value="tomorrow" {% if selected.date == "tomorrow" %} selected {% endif %}>На завтра</option>
-            <option value="this_week" {% if selected.date == "this_week" %} selected {% endif %}>На эту неделю</option>
-            <option value="next_week" {% if selected.date == "next_week" %} selected {% endif %}>На следующую неделю</option>
-        </select>
+        <div class="main-filters-container">
+            <div class="date-filter-container" id="date-filter-container">
+                <select class="date-select" name="date" id="date-select" onchange="on_date_select_change()">
+                    <option value="today" {% if selected.date == "today" %} selected {% endif %}>На сегодня</option>
+                    <option value="tomorrow" {% if selected.date == "tomorrow" %} selected {% endif %}>На завтра</option>
+                    <option value="this_week" {% if selected.date == "this_week" %} selected {% endif %}>На эту неделю</option>
+                    <option value="next_week" {% if selected.date == "next_week" %} selected {% endif %}>На следующую неделю</option>
+                    <option value="single_date" {% if selected.date == "single_date" %} selected {% endif %}>На дату</option>
+                    <option value="range_date" {% if selected.date == "range_date" %} selected {% endif %}>На диапазон дат</option>
+                </select>
 
-        <select class="group-pillbox" name="group[]" multiple="multiple">
-            {% for group in groups %}
-                <option value="{{ group }}" {% if group in selected.group %} selected {% endif %}>{{ group }}</option>
-            {% endfor %}
-        </select>
+                <div class="specified-date-container" id="specified-date-container" style="display: none;">
+                    <input type="date" name="left_date" id="left-date" value="{{ selected.left_date }}" style="width: 100%;">
+                    <input type="date" name="right_date" id="right-date" value="{{ selected.right_date }}" style="display: none;">
+                </div>
+            </div>
 
-        <select class="teacher-pillbox" name="teacher[]" multiple="multiple">
-            {% for teacher in teachers %}
-                <option value="{{ teacher }}" {% if teacher in selected.teacher %} selected {% endif %}>{{ teacher }}</option>
-            {% endfor %}
-        </select>
+            <select class="group-pillbox" name="group[]" multiple="multiple">
+                {% for group in groups %}
+                    <option value="{{ group }}" {% if group in selected.group %} selected {% endif %}>{{ group }}</option>
+                {% endfor %}
+            </select>
 
-        <select class="place-pillbox" name="place[]" multiple="multiple">
-            {% for place in places %}
-                <option value="{{ place }}" {% if place in selected.place %} selected {% endif %}>{{ place }}</option>
-            {% endfor %}
-        </select>
+            <select class="teacher-pillbox" name="teacher[]" multiple="multiple">
+                {% for teacher in teachers %}
+                    <option value="{{ teacher }}" {% if teacher in selected.teacher %} selected {% endif %}>{{ teacher }}</option>
+                {% endfor %}
+            </select>
 
-        <button onclick="this.form.submit()" style="margin-left: 20px;">Показать</button>
+            <select class="place-pillbox" name="place[]" multiple="multiple">
+                {% for place in places %}
+                    <option value="{{ place }}" {% if place in selected.place %} selected {% endif %}>{{ place }}</option>
+                {% endfor %}
+            </select>
 
+            <button type="submit" onclick="this.form.submit()" style="margin-left: 20px;">Показать</button>
+        </div>
+        
         <div style="margin-top: 20px;">
-            <button type="button" id="filters-button" onclick="update_filters_visibility()">
+            <button type="button" id="more-filters-button" onclick="update_filters_visibility()">
                 {% if addition_filters_visible == "1" %}
                     Меньше фильтров
                 {% else %}
@@ -40,9 +51,9 @@
             <input type="hidden" id="filters-visibility-state" name="addition_filters_visible" value={{ addition_filters_visible }}>
         </div>
         
-        <div class="filters-container" id="filters-container"
+        <div class="addition-filters-container" id="addition-filters-container"
         {% if addition_filters_visible == "1" %}
-            style="display: block;"
+            style="display: flex;"
         {% else %}
             style="display: none;"
         {% endif %}
@@ -67,3 +78,5 @@
         </div>
     </header>
 </form>
+
+<script>on_date_select_change();</script>

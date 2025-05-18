@@ -4,16 +4,35 @@ header {
     margin-bottom: 30px;
 }
 
+.main-filters-container {
+    display: flex; 
+    align-items: flex-start; 
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.date-filter-container {
+    display: flex;
+    flex-direction: column;
+    min-width: 15%;
+}
+
+.specified-date-container {
+    margin-top: 5px; 
+    gap: 10px;
+}
+
 header button {
     padding: 10px 30px;
 }
 
-.filters-container {
-    margin-top: 20px;
+header input[type="date"] {
+    padding: 3px 7px;
 }
 
-.select2-container {
-    width: 15% !important;
+.addition-filters-container {
+    margin-top: 20px;
+    gap: 10px;
 }
 
 .calendar-table {

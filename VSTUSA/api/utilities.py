@@ -1,6 +1,6 @@
 from django.db.models import QuerySet, Q
 from datetime import date, timedelta
-import api.utilityFilters as filters
+import api.utility_filters as filters
 from itertools import islice
 from api.models import (
     CommonModel,

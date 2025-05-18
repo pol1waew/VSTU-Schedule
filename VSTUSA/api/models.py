@@ -191,7 +191,7 @@ class ScheduleTemplate(CommonModel):
         super().save(**kwargs)
 
         from api.utilities import WriteAPI, ReadAPI
-        import api.utilityFilters as filters
+        import api.utility_filters as filters
 
         reader = ReadAPI({"schedule__schedule_template" : self})
         # getting AbstractEvents with existing Events
@@ -237,7 +237,7 @@ class Schedule(CommonModel):
         super().save(**kwargs)
         
         from api.utilities import WriteAPI, ReadAPI
-        import api.utilityFilters as filters
+        import api.utility_filters as filters
 
         reader = ReadAPI({"schedule" : self})
         # getting AbstractEvent with existing Event
@@ -312,7 +312,7 @@ class EventCancel(CommonModel):
         super().save(**kwargs)
         
         from api.utilities import WriteAPI, ReadAPI
-        import api.utilityFilters as filters
+        import api.utility_filters as filters
 
         reader = ReadAPI(filters.DateFilter.from_singe_date(self.date))
         reader.add_filter(filters.EventFilter.by_department(self.department))
@@ -372,7 +372,7 @@ class DayDateOverride(CommonModel):
         super().save(**kwargs)
         
         from api.utilities import WriteAPI, ReadAPI
-        import api.utilityFilters as filters
+        import api.utility_filters as filters
 
         reader = ReadAPI(filters.DateFilter.from_singe_date(self.day_source))
         reader.add_filter(filters.EventFilter.by_department(self.department))
@@ -438,7 +438,7 @@ def on_event_save(sender, instance, **kwargs):
             return
 
         from api.utilities import WriteAPI, ReadAPI
-        import api.utilityFilters as filters
+        import api.utility_filters as filters
 
         reader = ReadAPI({"department" : instance.department})
         reader.add_filter(filters.DateFilter.from_singe_date(instance.date))

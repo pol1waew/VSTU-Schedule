@@ -185,7 +185,7 @@ class DayDateOverrideAdmin(BaseAdmin):
 
     @admin.action(description="Применить переносы")
     def override(modeladmin, request, queryset):
-        import api.utilityFilters as filters
+        import api.utility_filters as filters
 
         for ddo in queryset:
             reader = ReadAPI(filters.DateFilter.from_singe_date(ddo.day_source))

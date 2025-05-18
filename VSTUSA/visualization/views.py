@@ -1,7 +1,6 @@
 from api.utilities import ReadAPI
 from django.shortcuts import render
 from django.template.defaulttags import register
-from datetime import datetime
 from visualization.logic import *
 
 @register.filter
@@ -11,14 +10,11 @@ def list_item(list_, i):
     except:
         return None
 
-@register.filter
-def dateFormat(date):
-    return datetime.strptime(date, "%Y-%m-%d").strftime("%d.%m.%Y")
-
-
 def index(request):
     selected = {
         "date" : "today", 
+        "left_date" : "",
+        "right_date" : "",
         "group" : "", 
         "teacher" : "",
         "place" : "",
@@ -31,26 +27,23 @@ def index(request):
         if "date" in request.POST:
             selected["date"] = request.POST.get("date")
 
-        if "group[]" in request.POST:
-            selected["group"] = request.POST.getlist("group[]") 
+        if "left_date" in request.POST:
+            selected["left_date"] = request.POST.get("left_date")
         
-        if "teacher[]" in request.POST:
-            selected["teacher"] = request.POST.getlist("teacher[]")
-            if type(selected["teacher"]) is list and len(selected["teacher"]) == 1:
-                selected["teacher"] = selected["teacher"][0]
+        if "right_date" in request.POST:
+            selected["right_date"] = request.POST.get("right_date")
 
-        if "place[]" in request.POST:
-            selected["place"] = request.POST.getlist("place[]") 
+        selected["group"] = get_POST_value(request.POST, "group[]")
 
-        if "subject[]" in request.POST:
-            selected["subject"] = request.POST.getlist("subject[]") 
+        selected["teacher"] = get_POST_value(request.POST, "teacher[]")
 
-        if "kind[]" in request.POST:
-            selected["kind"] = request.POST.getlist("kind[]") 
-            
-        if "time_slot[]" in request.POST:
-            selected["time_slot"] = request.POST.getlist("time_slot[]") 
+        selected["place"] = get_POST_value(request.POST, "place[]")
 
+        selected["subject"] = get_POST_value(request.POST, "subject[]")
+
+        selected["kind"] = get_POST_value(request.POST, "kind[]")
+
+        selected["time_slot"] = get_POST_value(request.POST, "time_slot[]")
 
     groups = ReadAPI.get_all_groups().values_list("name", flat=True)
     teachers = ReadAPI.get_all_teachers().values_list("name", flat=True)
@@ -61,7 +54,6 @@ def index(request):
     time_slots = [str(ts) for ts in ReadAPI.get_all_time_slots()]
 
     data = get_table_data(selected)
-    print(data)
 
     data = {"selected" : selected,
             "groups" : groups,
@@ -77,38 +69,4 @@ def index(request):
             "addition_filters_visible" : request.POST.get("addition_filters_visible") if "addition_filters_visible" in request.POST else "0"
     }
     
-    return render(request, "index.html", context = data)
-
-    dates = []
-    data = {}
-    calendar = {}
-    weekDays = {}
-    weekNumber = {}
-
-    filters = {"date" :  int(request.GET.get("date", 2)),
-               "sort" :  int(request.GET.get("sort", 0)),
-               "option" :  request.GET.get("option", "")}
-
-    dates = getDates(filters["date"])
-
-    for date in reversed(dates):
-        entry = get_table_data(date, filters)
-        # remove dates with no entries (lessons)
-        if (len(entry) == 0):
-            dates.remove(date)
-            continue
-
-        data[date] = entry
-        calendar[date] = getCalendar(date)
-        weekDays[date] = dateToWeekDay(date)
-        weekNumber[date] = dayToWeekNumber(date)
-
-    data = {"dates" : dates, 
-            "entries" : data, 
-            "calendar" : calendar,
-            "options" : getSelectOptions(filters["sort"]),
-            "weekDays" : weekDays,
-            "weekNumber" : weekNumber,
-            "filters" : filters}
-
     return render(request, "index.html", context = data)
