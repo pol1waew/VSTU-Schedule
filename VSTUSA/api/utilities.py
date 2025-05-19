@@ -1,5 +1,5 @@
-from django.db.models import QuerySet, Q
-from datetime import date, timedelta
+from django.db.models import QuerySet
+from datetime import datetime, date, timedelta
 import api.utility_filters as filters
 from itertools import islice
 from api.models import (
@@ -19,18 +19,11 @@ from api.models import (
     Subject,
     TimeSlot,
     DayDateOverride,
-    EventCancel
+    EventCancel,
+    AbstractEventChanges
 )
+import xlsxwriter
 
-
-class Utilities:
-    def __init__(self):
-        pass
-
-    pass
-
-
-## возвращать как объекты готовые для json
 class ReadAPI:
     filter_query : dict
     found_models : QuerySet
@@ -262,3 +255,30 @@ class WriteAPI:
             
         if call_save_method:
             event.save()
+
+    @staticmethod
+    def export_changes_file(abs_event_changes):
+        export_path = "change_files/"
+        workbook = xlsxwriter.Workbook(f"{export_path}{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}.xlsx")
+        worksheet = workbook.add_worksheet()
+
+        column_names = ["ГРУППА", "ДЕНЬ НЕДЕЛИ/УЧ. ЧАС", "ПРЕДМЕТ", "ДЕЙСТВИЕ", "БЫЛО", "СТАЛО"]
+        for i in range(len(column_names)):
+            worksheet.write(0, i, column_names[i])
+
+        row = 2
+        for aec in abs_event_changes:
+            data = aec.export()
+
+            for changes in data:
+                for i in range(len(changes)):
+                    worksheet.write(row, i, changes[i])
+
+                row += 1
+
+            row += 1
+
+        abs_event_changes.delete()
+        
+        worksheet.autofit()
+        workbook.close()

@@ -1,4 +1,4 @@
-from api.utilities import WriteAPI, ReadAPI
+from api.utilities import ReadAPI, WriteAPI
 from django.contrib import admin, messages
 from django.contrib.admin.actions import delete_selected
 from django.forms import BaseInlineFormSet
@@ -22,6 +22,7 @@ from api.models import (
     TimeSlot,
     DayDateOverride,
     EventCancel,
+    AbstractEventChanges
 )
 
 from rest_framework.authtoken.admin import TokenAdmin
@@ -119,8 +120,20 @@ class ScheduleAdmin(BaseAdmin):
 @admin.register(Event)
 class EventAdmin(BaseAdmin):
     list_display = ("subject_override", "kind_override", "date", "time_slot_override")
-    search_fields = ("subject_override", "date", "kind_override")
+    search_fields = ("subject_override__name", "participants_override__name", "date")
     list_filter = ("kind_override", "is_event_canceled")
+
+
+@admin.register(AbstractEventChanges)
+class AbstractEventChanges(BaseAdmin):
+    list_display = ("datemodified", "__str__")
+    list_filter = ("is_created", "is_deleted")
+
+    actions = ["export"]
+
+    @admin.action(description="Экспорт")
+    def export(modeladmin, request, queryset):
+        WriteAPI.export_changes_file(queryset)
 
 
 @admin.register(AbstractEvent)
@@ -129,7 +142,7 @@ class AbstractEventAdmin(BaseAdmin):
     search_fields = ("subject__name", "kind__name")
     list_filter = ("kind__name",)
 
-    actions = ["delete_events", "fill", "make_diff_file"]
+    actions = ["delete_events", "fill", "test"]
 
     @admin.action(description="Удалить связанные события")
     def delete_events(modeladmin, request, queryset):
@@ -143,18 +156,20 @@ class AbstractEventAdmin(BaseAdmin):
         else:
             messages.error(request, "Произошла ошибка")
 
-    @admin.action(description="Создать дифф файл")
-    def make_diff_file(modeladmin, request, queryset):
-        pass
-    
-    def changelist_view(self, request, extra_context=None):
-        """
-        if 'action' in request.POST and request.POST['action'] == 'your_action_here':
-            if not request.POST.getlist(ACTION_CHECKBOX_NAME):
-        """
+    @admin.action(description="test")
+    def test(modeladmin, request, queryset):
+        ae = AbstractEvent()
+        ae.kind = EventKind.objects.first()
+        ae.subject = Subject.objects.first()
+        ae.abstract_day = AbstractDay.objects.first()
+        ae.time_slot = TimeSlot.objects.first()
+        ae.holds_on_date = "2025-05-19"
+        ae.schedule = Schedule.objects.first()
+        ae.save()
+        ae.participants.set(EventParticipant.objects.filter(name__in=["Синкевич Д.", "Гилка В.В.", "ПрИн-466"]))
+        ae.places.set(EventPlace.objects.filter(room__in=["902а", "902в"]))
+        ae.save()
 
-
-        return super(AbstractEventAdmin, self).changelist_view(request, extra_context)
 
 
 @admin.register(AbstractDay)
