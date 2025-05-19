@@ -1,9 +1,9 @@
 from api.utilities import WriteAPI, ReadAPI
-
 from django.contrib import admin, messages
 from django.contrib.admin.actions import delete_selected
 from django.forms import BaseInlineFormSet
 from django.utils import timezone
+from django.contrib.admin.helpers import ACTION_CHECKBOX_NAME
 
 from api.models import (
     AbstractEvent,
@@ -129,7 +129,7 @@ class AbstractEventAdmin(BaseAdmin):
     search_fields = ("subject__name", "kind__name")
     list_filter = ("kind__name",)
 
-    actions = ["delete_events", "fill"]
+    actions = ["delete_events", "fill", "make_diff_file"]
 
     @admin.action(description="Удалить связанные события")
     def delete_events(modeladmin, request, queryset):
@@ -142,6 +142,19 @@ class AbstractEventAdmin(BaseAdmin):
             messages.success(request, "Успешно заполнено")
         else:
             messages.error(request, "Произошла ошибка")
+
+    @admin.action(description="Создать дифф файл")
+    def make_diff_file(modeladmin, request, queryset):
+        pass
+    
+    def changelist_view(self, request, extra_context=None):
+        """
+        if 'action' in request.POST and request.POST['action'] == 'your_action_here':
+            if not request.POST.getlist(ACTION_CHECKBOX_NAME):
+        """
+
+
+        return super(AbstractEventAdmin, self).changelist_view(request, extra_context)
 
 
 @admin.register(AbstractDay)

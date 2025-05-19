@@ -267,6 +267,23 @@ class EventParticipant(CommonModel):
         return f"{self.name} ({self.role})"
 
 
+class AbstractEventChanges(CommonModel):
+    class Meta:
+        verbose_name = "Изменения в абстрактном событии"
+        verbose_name_plural = "Изменения в абстрактных событиях"
+
+    origin_participants = models.TextField(null=True, verbose_name="Изначальные участники")
+    final_participants = models.TextField(null=True, verbose_name="Участники после изменений")
+    origin_places = models.TextField(null=True, verbose_name="Изначальные места")
+    final_places = models.TextField(null=True, verbose_name="Места после изменений")
+    origin_date_time = models.TextField(null=True, verbose_name="Изначальная дата и учебный час")
+    final_date_time = models.TextField(null=True, verbose_name="Дата и учебный час после изменений")
+    origin_holds_on_date = models.TextField(null=True, verbose_name="Изначальные заданный день")
+    final_holds_on_date = models.TextField(null=True, verbose_name="Заданный день после изменений")
+    is_created = models.BooleanField(verbose_name="Создано", default=False)
+    is_deleted = models.BooleanField(verbose_name="Удалено", default=False)
+
+
 # need manualy fill semester
 class AbstractEvent(CommonModel):
     class Meta:
@@ -282,6 +299,7 @@ class AbstractEvent(CommonModel):
     # single date. for many dates you should create many events
     holds_on_date = models.DateField(null=True, blank=True, verbose_name="Проводится только в заданный день")
     schedule = models.ForeignKey(Schedule, null=True, on_delete=models.CASCADE, related_name="events", verbose_name="Расписание")
+    changes = models.ForeignKey(AbstractEventChanges, null=True, blank=True, on_delete=models.DO_NOTHING, editable=False, verbose_name="Изменения")
 
     def __repr__(self):
         return f"Занятие по {self.subject.name}, {self.time_slot.alt_name}ч."
