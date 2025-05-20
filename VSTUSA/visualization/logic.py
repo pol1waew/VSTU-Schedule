@@ -48,6 +48,7 @@ def get_table_data(filters):
 
     return list(zip(entries, row_spans, calendar))
 
+
 def format_events(events):
     events = events.order_by("time_slot_override__start_time", "date")
 
@@ -58,6 +59,14 @@ def format_events(events):
         grouped_events[e.date].append(e)
 
     return list(grouped_events.values())
+
+
+def is_same_entries(first_entry, second_entry):
+    return abs(first_entry.time_slot_override.pk - second_entry.time_slot_override.pk) == 1 and \
+            first_entry.subject_override == second_entry.subject_override and \
+            list(first_entry.get_groups()) == list(second_entry.get_groups()) and \
+            list(first_entry.get_teachers()) == list(second_entry.get_teachers()) and \
+            list(first_entry.places_override.all()) == list(second_entry.places_override.all())
 
 
 def get_row_spans(entries):
@@ -75,18 +84,19 @@ def get_row_spans(entries):
                 prev_event_expanded = False
                 continue
             
+            """
             # cant wrap rows with canceled events
             if entry[i].is_event_canceled == True:
                 row_spans[len(row_spans) - 1].append(1)
                 continue
-
+            """
+                
             # skip last row
             if i + 1 >= len(entry):
                 row_spans[len(row_spans) - 1].append(1)
                 continue
 
-            if entry[i].subject_override == entry[i + 1].subject_override and \
-                abs(entry[i].time_slot_override.pk - entry[i + 1].time_slot_override.pk) == 1:
+            if is_same_entries(entry[i], entry[i + 1]):
                 row_spans[len(row_spans) - 1].append(2)
                 prev_event_expanded = True
             else:

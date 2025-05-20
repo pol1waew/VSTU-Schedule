@@ -103,7 +103,7 @@ td {
     width: 10%;
 }
 
-.canceled-row {
+.canceled-cell {
     background-color: lightpink !important;
     text-decoration: line-through;
 }

@@ -9,6 +9,15 @@ def list_item(list_, i):
         return list_[i - 1]
     except:
         return None
+    
+@register.filter
+def is_full_row_canceled(list_, i):
+    try:
+        if is_same_entries(list_[i - 1], list_[i]):
+            return list_[i].is_event_canceled
+        return True
+    except:
+        return True
 
 def index(request):
     selected = {

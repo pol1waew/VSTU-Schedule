@@ -30,29 +30,33 @@
 
             <tbody>
                 {% for event in entry %}
-                    <tr 
-                    {% if event.is_event_canceled %}
-                        class="canceled-row"
-                    {% endif %}
-                    name="r{{ forloop.parentloop.counter }}">
-                        <td name="c1d{{ forloop.parentloop.counter }}">
+                    <tr name="r{{ forloop.parentloop.counter }}">
+                        <td name="c1d{{ forloop.parentloop.counter }}" {% if event.is_event_canceled %} class="canceled-cell" {% endif %}>
                             {{ event.time_slot_override.start_time }} - {{ event.time_slot_override.end_time }}
                         </td>
                         {% if row_spans|list_item:forloop.counter != 0 %}
-                            <td name="c2d{{ forloop.parentloop.counter }}" rowspan="{{ row_spans|list_item:forloop.counter }}">
+                            <td 
+                            {% if event.is_event_canceled and entry|is_full_row_canceled:forloop.counter %} class="canceled-cell" {% endif %} 
+                            name="c2d{{ forloop.parentloop.counter }}" rowspan="{{ row_spans|list_item:forloop.counter }}">
                                 {{ event.subject_override }} ({{ event.kind_override }})
                             </td>
-                            <td name="c3d{{ forloop.parentloop.counter }}" rowspan="{{ row_spans|list_item:forloop.counter }}">
+                            <td 
+                            {% if event.is_event_canceled and entry|is_full_row_canceled:forloop.counter %} class="canceled-cell" {% endif %} 
+                            name="c3d{{ forloop.parentloop.counter }}" rowspan="{{ row_spans|list_item:forloop.counter }}">
                                 {% for group in event.get_groups.all %}
                                     {{ group.name|linebreaks }}
                                 {% endfor %}
                             </td>
-                            <td name="c4d{{ forloop.parentloop.counter }}" rowspan="{{ row_spans|list_item:forloop.counter }}">
+                            <td 
+                            {% if event.is_event_canceled and entry|is_full_row_canceled:forloop.counter %} class="canceled-cell" {% endif %}
+                            name="c4d{{ forloop.parentloop.counter }}" rowspan="{{ row_spans|list_item:forloop.counter }}">
                                 {% for teacher in event.get_teachers.all %}
                                     {{ teacher.name|linebreaks }}
                                 {% endfor %}
                             </td>
-                            <td name="c5d{{ forloop.parentloop.counter }}" rowspan="{{ row_spans|list_item:forloop.counter }}">
+                            <td 
+                            {% if event.is_event_canceled and entry|is_full_row_canceled:forloop.counter %} class="canceled-cell" {% endif %}
+                            name="c5d{{ forloop.parentloop.counter }}" rowspan="{{ row_spans|list_item:forloop.counter }}">
                                 {% for place in event.places_override.all %}
                                     {{ place|linebreaks }}
                                 {% endfor %}
