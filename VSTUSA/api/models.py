@@ -4,6 +4,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.signals import pre_save, post_save, pre_delete, m2m_changed
 from django.dispatch import receiver
+from django.urls import reverse
 
 
 class CommonModel(models.Model):
@@ -78,6 +79,9 @@ class EventPlace(CommonModel):
 
     def __repr__(self):
         return f"{self.building} {self.room}"
+    
+    def get_absolute_url(self):
+        return reverse("admin:api_eventplace_change", args=[self.pk])
 
 
 class EventKind(CommonModel):
@@ -265,6 +269,9 @@ class EventParticipant(CommonModel):
 
     def __repr__(self):
         return f"{self.name} ({self.role})"
+    
+    def get_absolute_url(self):
+        return reverse("admin:api_eventparticipant_change", args=[self.pk])
 
 
 class AbstractEventChanges(CommonModel):
@@ -390,6 +397,9 @@ class AbstractEvent(CommonModel):
     
     def get_teachers(self):
         return self.participants.filter(role__in=[EventParticipant.Role.TEACHER, EventParticipant.Role.ASSISTANT])
+    
+    def get_absolute_url(self):
+        return reverse("admin:api_abstractevent_change", args=[self.pk])
     
     def save(self, **kwargs):
         super().save(**kwargs)

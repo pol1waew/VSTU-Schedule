@@ -1,7 +1,10 @@
 from django.db.models import QuerySet
+from django.urls import reverse
+from django.utils.html import format_html
 from datetime import datetime, date, timedelta
 import api.utility_filters as filters
 from itertools import islice
+import xlsxwriter
 from api.models import (
     CommonModel,
     AbstractEvent,
@@ -22,7 +25,64 @@ from api.models import (
     EventCancel,
     AbstractEventChanges
 )
-import xlsxwriter
+
+
+class Utilities:
+    MESSAGE_TEMPLATE = '<a href="{}">{}</a> / {}<br>'
+    PARTICIPANTS_BASE_MESSAGE = "В сохранённом абс. событии ПРЕПОДАВАТЕЛИ совпадают с ПРЕПОДАВАТЕЛЯМИ в следующих абс. событиях<br>"
+    PARTICIPANT_MESSAGE_TEMPLATE = '<a href="{}">{}</a>, '
+    PLACES_BASE_MESSAGE = "В сохранённом абс. событии АУДИТОРИИ совпадают с АУДИТОРИЯМИ в следующих абс. событиях<br>"
+    PLACE_MESSAGE_TEMPLATE = '<a href="{}">{}</a>, '
+
+
+    @classmethod
+    def check_for_participants_duplicate(cls, abstract_event : AbstractEvent):
+        other_aes = AbstractEvent.objects.filter(participants__in=abstract_event.participants.all(), 
+                                                 abstract_day=abstract_event.abstract_day,
+                                                 time_slot=abstract_event.time_slot).exclude(pk=abstract_event.pk).distinct()
+
+        if not other_aes.exists():
+            return False, None
+        
+        message = format_html(cls.PARTICIPANTS_BASE_MESSAGE)
+        message_template = cls.MESSAGE_TEMPLATE
+        participants_template = cls.PARTICIPANT_MESSAGE_TEMPLATE
+        
+        for ae in other_aes:
+            p_urls = format_html("")
+            
+            for p in abstract_event.participants.filter(pk__in=ae.participants.values_list("pk", flat=True)):
+                p_urls += format_html(participants_template, p.get_absolute_url(), str(p.name))
+            p_urls = format_html(p_urls[:-2])
+            
+            message += format_html(message_template, ae.get_absolute_url(), str(ae), p_urls)
+
+        return True, message
+    
+    @classmethod
+    def check_for_places_duplicate(cls, abstract_event : AbstractEvent):
+        other_aes = AbstractEvent.objects.filter(places__in=abstract_event.places.all(), 
+                                                 abstract_day=abstract_event.abstract_day,
+                                                 time_slot=abstract_event.time_slot).exclude(pk=abstract_event.pk).distinct()
+
+        if not other_aes.exists():
+            return False, None
+        
+        message = format_html(cls.PLACES_BASE_MESSAGE)
+        message_template = cls.MESSAGE_TEMPLATE
+        places_template = cls.PLACE_MESSAGE_TEMPLATE
+        
+        for ae in other_aes:
+            p_urls = format_html("")
+            
+            for p in abstract_event.places.filter(pk__in=ae.places.values_list("pk", flat=True)):
+                p_urls += format_html(places_template, p.get_absolute_url(), str(p))
+            p_urls = format_html(p_urls[:-2])
+            
+            message += format_html(message_template, ae.get_absolute_url(), str(ae), p_urls)
+
+        return True, message
+
 
 class ReadAPI:
     filter_query : dict

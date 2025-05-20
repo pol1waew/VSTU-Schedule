@@ -1,10 +1,10 @@
-from api.utilities import ReadAPI, WriteAPI
+from api.utilities import Utilities, ReadAPI, WriteAPI
 from django.contrib import admin, messages
 from django.contrib.admin.actions import delete_selected
 from django.forms import BaseInlineFormSet
 from django.utils import timezone
 from django.contrib.admin.helpers import ACTION_CHECKBOX_NAME
-
+from rest_framework.authtoken.admin import TokenAdmin
 from api.models import (
     AbstractEvent,
     AbstractDay,
@@ -24,8 +24,6 @@ from api.models import (
     EventCancel,
     AbstractEventChanges
 )
-
-from rest_framework.authtoken.admin import TokenAdmin
 
 
 class BaseAdmin(admin.ModelAdmin):
@@ -158,6 +156,19 @@ class AbstractEventAdmin(BaseAdmin):
 
     @admin.action(description="test")
     def test(modeladmin, request, queryset):
+        obj = AbstractEvent.objects.filter(holds_on_date="2025-05-19").first()
+
+        state, message = Utilities.check_for_participants_duplicate(obj)
+
+        if state:
+            messages.warning(request, message)
+
+        state, message = Utilities.check_for_places_duplicate(obj)
+
+        if state:
+            messages.warning(request, message)  
+        
+        return
         ae = AbstractEvent()
         ae.kind = EventKind.objects.first()
         ae.subject = Subject.objects.first()
@@ -169,6 +180,19 @@ class AbstractEventAdmin(BaseAdmin):
         ae.participants.set(EventParticipant.objects.filter(name__in=["Синкевич Д.", "Гилка В.В.", "ПрИн-466"]))
         ae.places.set(EventPlace.objects.filter(room__in=["902а", "902в"]))
         ae.save()
+
+    def save_model(self, request, obj, form, change):
+        state, message = Utilities.check_for_participants_duplicate(obj)
+
+        if state:
+            messages.warning(request, message)
+
+        state, message = Utilities.check_for_places_duplicate(obj)
+
+        if state:
+            messages.warning(request, message)        
+
+        super(AbstractEventAdmin, self).save_model(request, obj, form, change)
 
 
 
