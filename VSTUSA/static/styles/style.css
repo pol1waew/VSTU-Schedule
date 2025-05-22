@@ -36,6 +36,7 @@ header input[type="date"] {
 }
 
 .calendar-table {
+    max-height: 250px;
     min-height: 150px; 
     width: fit-content;
 }

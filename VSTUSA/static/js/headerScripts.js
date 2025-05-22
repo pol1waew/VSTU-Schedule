@@ -1,5 +1,6 @@
 document.addEventListener("DOMContentLoaded", function() {
     const multiple_pillbox_width = "15%";
+    const no_results_text = "Ничего не найдено";
     
     $(document).ready(function() {
         $(".date-select").select2({
@@ -15,7 +16,11 @@ document.addEventListener("DOMContentLoaded", function() {
             placeholder : "Группа",
             allowClear : true,
             width : multiple_pillbox_width,
-            closeOnSelect : false
+            closeOnSelect : false,
+            "language": {
+                "noResults": function() { return no_results_text; }
+            },
+            escapeMarkup: function (markup) { return markup; }
         });
     });
 
@@ -24,7 +29,11 @@ document.addEventListener("DOMContentLoaded", function() {
             placeholder : "Преподаватель",
             allowClear : true,
             width : multiple_pillbox_width,
-            closeOnSelect : false
+            closeOnSelect : false,
+            "language": {
+                "noResults": function() { return no_results_text; }
+            },
+            escapeMarkup: function (markup) { return markup; }
         });
     });
 
@@ -33,7 +42,11 @@ document.addEventListener("DOMContentLoaded", function() {
             placeholder : "Аудитория",
             allowClear : true,
             width : multiple_pillbox_width,
-            closeOnSelect : false
+            closeOnSelect : false,
+            "language": {
+                "noResults": function() { return no_results_text; }
+            },
+            escapeMarkup: function (markup) { return markup; }
         });
     });
 
@@ -42,7 +55,11 @@ document.addEventListener("DOMContentLoaded", function() {
             placeholder : "Предмет",
             allowClear : true,
             width : multiple_pillbox_width,
-            closeOnSelect : false
+            closeOnSelect : false,
+            "language": {
+                "noResults": function() { return no_results_text; }
+            },
+            escapeMarkup: function (markup) { return markup; }
         });
     });
 
@@ -51,7 +68,11 @@ document.addEventListener("DOMContentLoaded", function() {
             placeholder : "Тип предмета",
             allowClear : true,
             width : multiple_pillbox_width,
-            closeOnSelect : false
+            closeOnSelect : false,
+            "language": {
+                "noResults": function() { return no_results_text; }
+            },
+            escapeMarkup: function (markup) { return markup; }
         });
     });
 
@@ -60,10 +81,23 @@ document.addEventListener("DOMContentLoaded", function() {
             placeholder : "Время проведения",
             allowClear : true,
             width : multiple_pillbox_width,
-            closeOnSelect : false
+            closeOnSelect : false,
+            "language": {
+                "noResults": function() { return no_results_text; }
+            },
+            escapeMarkup: function (markup) { return markup; }
         });
     });
 });
+
+document.onkeydown = function(e) {
+    if (e.key === "Enter") {
+        document.getElementById("header-form").submit();
+    }
+    else if (e.key === "Backspace") {
+        drop_filters();
+    }
+};
 
 function on_date_select_change() {
     var selected_value = document.getElementById("date-select").value;

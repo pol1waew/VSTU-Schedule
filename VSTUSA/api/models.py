@@ -374,7 +374,7 @@ class AbstractEvent(CommonModel):
         verbose_name = "Абстрактное событие"
         verbose_name_plural = "Абстрактные события"
 
-    kind = models.ForeignKey(EventKind, on_delete=models.PROTECT, verbose_name="Тип")
+    kind = models.ForeignKey(EventKind, null=True, blank=True, on_delete=models.PROTECT, verbose_name="Тип")
     subject = models.ForeignKey(Subject, on_delete=models.PROTECT, verbose_name="Предмет")
     participants = models.ManyToManyField(EventParticipant, verbose_name="Участники")
     places = models.ManyToManyField(EventPlace, verbose_name="Места")

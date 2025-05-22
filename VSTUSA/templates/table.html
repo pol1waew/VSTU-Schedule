@@ -1,7 +1,7 @@
 {% for entry, row_spans, calendar in data %}
     <div class="schedule-date-info">
-        <p>{{ entry.0.date }}</p>
         <p>{{ entry.0.abstract_event.abstract_day.name }}</p>
+        <p>{{ entry.0.date }}</p>
     </div>
 
     <div style="display: flex;">

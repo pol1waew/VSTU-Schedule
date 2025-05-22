@@ -182,15 +182,8 @@ class AbstractEventAdmin(BaseAdmin):
         ae.save()
 
     def save_model(self, request, obj, form, change):
-        state, message = Utilities.check_for_participants_duplicate(obj)
-
-        if state:
+        for message in Utilities.check_abstract_event(obj):
             messages.warning(request, message)
-
-        state, message = Utilities.check_for_places_duplicate(obj)
-
-        if state:
-            messages.warning(request, message)        
 
         super(AbstractEventAdmin, self).save_model(request, obj, form, change)
 

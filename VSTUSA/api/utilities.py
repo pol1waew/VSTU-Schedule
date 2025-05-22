@@ -29,10 +29,24 @@ from api.models import (
 
 class Utilities:
     MESSAGE_TEMPLATE = '<a href="{}">{}</a> / {}<br>'
-    PARTICIPANTS_BASE_MESSAGE = "В сохранённом абс. событии ПРЕПОДАВАТЕЛИ совпадают с ПРЕПОДАВАТЕЛЯМИ в следующих абс. событиях<br>"
+    PARTICIPANTS_BASE_MESSAGE = "В сохранённом абс. событии ПРЕПОДАВАТЕЛИ одновременно участвуют в других абс. событиях:<br>"
     PARTICIPANT_MESSAGE_TEMPLATE = '<a href="{}">{}</a>, '
-    PLACES_BASE_MESSAGE = "В сохранённом абс. событии АУДИТОРИИ совпадают с АУДИТОРИЯМИ в следующих абс. событиях<br>"
+    PLACES_BASE_MESSAGE = "В сохранённом абс. событии АУДИТОРИИ одновременно задействованы в других абс. событиях:<br>"
     PLACE_MESSAGE_TEMPLATE = '<a href="{}">{}</a>, '
+
+
+    @classmethod
+    def check_abstract_event(cls, abstract_event : AbstractEvent):
+        funcs = [Utilities.check_for_participants_duplicate, Utilities.check_for_places_duplicate]
+        messages = []
+
+        for f in funcs:
+            state, message = f(abstract_event)
+            
+            if state:
+                messages.append(message)
+
+        return messages
 
 
     @classmethod
@@ -322,7 +336,8 @@ class WriteAPI:
         workbook = xlsxwriter.Workbook(f"{export_path}{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}.xlsx")
         worksheet = workbook.add_worksheet()
 
-        column_names = ["ГРУППА", "ДЕНЬ НЕДЕЛИ/УЧ. ЧАС", "ПРЕДМЕТ", "ДЕЙСТВИЕ", "БЫЛО", "СТАЛО"]
+        column_names = ["ГРУППА", "ДЕНЬ НЕДЕЛИ/УЧ. ЧАС", "ПРЕДМЕТ", "ИЗМЕНЕНО", "БЫЛО", "СТАЛО"]
+        # дата создания change file поле - 1 колонка
         for i in range(len(column_names)):
             worksheet.write(0, i, column_names[i])
 
@@ -338,6 +353,7 @@ class WriteAPI:
 
             row += 1
 
+        # удаление в отдельный action
         abs_event_changes.delete()
         
         worksheet.autofit()

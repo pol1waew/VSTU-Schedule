@@ -1,4 +1,4 @@
-<form action="" method="post">
+<form action="" method="post" id="header-form">
     {% csrf_token %}
     <header>
         <div class="main-filters-container">
@@ -36,7 +36,7 @@
                 {% endfor %}
             </select>
 
-            <button type="submit" onclick="this.form.submit()" style="margin-left: 20px;">Показать</button>
+            <button type="submit"id="submit-button" onclick="this.form.submit()" style="margin-left: 20px;">Показать</button>
         </div>
         
         <div style="margin-top: 20px;">
