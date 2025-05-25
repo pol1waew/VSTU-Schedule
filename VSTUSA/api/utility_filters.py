@@ -1,19 +1,19 @@
-from django.db.models import F
 from datetime import date, timedelta
-from api.models import (
-    Event,
-)
 import re
+from api.models import (Event,)
 
 
 class UtilityFilterBase:
     """Base parent class for filters   
 
-    Utility filters returns filter query: dict {field_name : parameter}
+    Utility filters returns filter query in format: dict {field_name : parameter}
     """
 
 
 class DateFilter(UtilityFilterBase):
+    """Only for work with Event model fields
+    """
+
     @staticmethod
     def from_singe_date(date_ : str|date):
         return {"date" : date_}
@@ -60,6 +60,9 @@ class DateFilter(UtilityFilterBase):
     
 
 class ParticipantFilter(UtilityFilterBase):
+    """Only for work with Event model fields
+    """
+
     @staticmethod
     def by_name(name : str|list[str]):
         """
@@ -86,6 +89,9 @@ class ParticipantFilter(UtilityFilterBase):
     
 
 class PlaceFilter(UtilityFilterBase):
+    """Only for work with Event model fields
+    """
+
     @classmethod
     def by_repr(cls, repr : str|list[str]):
         """
@@ -133,6 +139,9 @@ class PlaceFilter(UtilityFilterBase):
     
 
 class SubjectFilter(UtilityFilterBase):
+    """Only for work with Event model fields
+    """
+
     @staticmethod
     def by_name(name : str|list[str]):
         """
@@ -147,6 +156,9 @@ class SubjectFilter(UtilityFilterBase):
     
 
 class TimeSlotFilter(UtilityFilterBase):
+    """Only for work with Event model fields
+    """
+
     @staticmethod
     def by_repr(repr : str|list[str]):
         """
@@ -165,7 +177,9 @@ class TimeSlotFilter(UtilityFilterBase):
     
 
 class KindFilter(UtilityFilterBase):
-    """ только для event """
+    """Only for work with Event model fields
+    """
+    
     @staticmethod
     def by_name(name : str|list[str]):
         """
@@ -180,6 +194,9 @@ class KindFilter(UtilityFilterBase):
 
 
 class EventFilter(UtilityFilterBase):
+    """Only for work with Event model fields
+    """
+
     @staticmethod
     def overriden():
         return {"is_event_overriden" : True}
@@ -198,6 +215,9 @@ class EventFilter(UtilityFilterBase):
     
 
 class AbstractEventFilter(UtilityFilterBase):
+    """Only for work with AbstractEvent model fields
+    """
+
     @staticmethod
     def with_existing_events():
         return {"pk__in" : Event.objects.values_list("abstract_event__pk", flat=True).distinct()}

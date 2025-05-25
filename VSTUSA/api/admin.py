@@ -150,12 +150,18 @@ class AbstractEventChangesAdmin(BaseAdmin):
 
     @admin.action(description="Удалить экспортированные")
     def delete_exported(modeladmin, request, queryset):
+        """Deletes already exported AbstractEventChanges
+        """
+        
         AbstractEventChanges.objects.filter(is_exported=True).delete()
 
         messages.success(request, "Успешно удалены")
 
     @admin.action(description="Экспортировать выбранное")
     def export_selected(modeladmin, request, queryset):
+        """Export XLS form given AbstractEventChanges
+        """
+        
         response = WriteAPI.make_changes_file(queryset)
 
         messages.success(request, "Успешно экспортированы")
@@ -164,6 +170,9 @@ class AbstractEventChangesAdmin(BaseAdmin):
 
     @admin.action(description="Экспортировать не экспортированные")
     def export_not_exported(modeladmin, request, queryset):
+        """Export XLS form all not exported AbstractEventChanges
+        """
+
         changes = AbstractEventChanges.objects.filter(is_exported=False)
 
         if not changes.exists():
@@ -178,6 +187,9 @@ class AbstractEventChangesAdmin(BaseAdmin):
         return response
         
     def changelist_view(self, request, extra_context = None):
+        """Allows user to interact with specified actions without selecting models
+        """
+        
         if "action" in request.POST and request.POST["action"] in ["export_not_exported", "delete_exported"]:
             post = request.POST.copy()
 
@@ -199,11 +211,17 @@ class AbstractEventAdmin(BaseAdmin):
 
     @admin.action(description="Удалить связанные события")
     def delete_events(modeladmin, request, queryset):
+        """Deletes all Events related with given AbstractEvents
+        """
+        
         Event.objects.filter(abstract_event__in=queryset).delete()
         messages.success(request, "Связанные события успешно удалены")
 
     @admin.action(description="Заполнить семестр")
     def fill(modeladmin, request, queryset):
+        """Fills semester with Events from given AbstractEvents
+        """
+        
         if WriteAPI.fill_event_table(queryset):
             messages.success(request, "Успешно заполнено")
         else:
@@ -211,6 +229,9 @@ class AbstractEventAdmin(BaseAdmin):
 
     @admin.action(description="Проверить на дублирование")
     def check_fields(modeladmin, request, queryset):
+        """Checks for double usage selected AbstractEvents field values
+        """
+
         for ae in queryset:
             is_double_usage_found, message = Utilities.check_abstract_event(ae)
 
@@ -259,6 +280,9 @@ class DayDateOverrideAdmin(BaseAdmin):
 
     @admin.action(description="Применить переносы")
     def override(modeladmin, request, queryset):
+        """Applies selected DayDateOverrides
+        """
+        
         import api.utility_filters as filters
 
         for ddo in queryset:

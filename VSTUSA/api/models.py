@@ -325,8 +325,8 @@ class AbstractEventChanges(CommonModel):
             self.final_kind = None
     
     @staticmethod
-    def str_from_participants(participants):
-        """Makes formated str to store from given participants
+    def str_from_participants(participants) -> str:
+        """Makes formated str to store from given EventParticipant
         """
 
         return_value = ""
@@ -338,8 +338,8 @@ class AbstractEventChanges(CommonModel):
         return return_value
     
     @staticmethod
-    def str_from_places(places):
-        """Makes formated str to store from given places
+    def str_from_places(places) -> str:
+        """Makes formated str to store from given EventPlace
         """
 
         return_value = ""
@@ -351,11 +351,14 @@ class AbstractEventChanges(CommonModel):
         return return_value
 
     @staticmethod
-    def str_from_date_time(abstract_event):
+    def str_from_date_time(abstract_event) -> str:
+        """Makes formated str to store from given AbstractEvent's day and time_slot
+        """
+        
         return f"{abstract_event.abstract_day} / {abstract_event.time_slot.alt_name}ч."
 
     def initialize(self, ae):
-        """Fills models with origin values
+        """Fills model with origin values from given AbstractEvent
         """
         
         self.group = self.str_from_participants(ae.get_groups())
@@ -366,7 +369,7 @@ class AbstractEventChanges(CommonModel):
         self.origin_holds_on_date = ae.holds_on_date
         self.origin_kind = ae.kind.name if ae.kind else ""
 
-    def export(self):
+    def export(self) -> list[list[str]]:
         """Prepare stored data to export
         """
         
@@ -442,12 +445,21 @@ class AbstractEvent(CommonModel):
     
     @property
     def department(self):
+        """Returns Event Department
+        """
+        
         return self.schedule.schedule_template.department
     
     def get_groups(self):
+        """Filter and returns groups from participants 
+        """
+        
         return self.participants.filter(is_group=True)
     
     def get_teachers(self):
+        """Filter and returns teachers from participants 
+        """
+
         return self.participants.filter(role__in=[EventParticipant.Role.TEACHER, EventParticipant.Role.ASSISTANT])
     
     def get_absolute_url(self):
@@ -579,11 +591,8 @@ def on_abstract_event_pre_save(sender, instance, **kwargs):
 def on_abstract_event_delete(sender, instance, **kwargs): 
     if instance.changes and instance.changes.is_created and not instance.changes.is_exported:
         instance.changes.delete()
-        print("ABSEVENT DELETING 222222")
         
         return
-    
-    print("ABSEVENT DELETING 11111")
 
     changes = AbstractEventChanges()
 
@@ -742,6 +751,9 @@ class Event(CommonModel):
         return f"Занятие по {self.abstract_event.subject.name}"    
 
     def check_date_interactions(self):
+        """Checks Event date and attaching/detaching DayDateOverride if needed
+        """
+
         if not self.date_override:
             from api.utilities import WriteAPI, ReadAPI
 
@@ -762,6 +774,9 @@ class Event(CommonModel):
             self.date_override = None
 
     def check_canceling(self):
+        """Checks Event date and attaching/detaching EventCancel if needed
+        """
+
         # skip manualy canceled events
         if self.is_event_canceled and not self.event_cancel:
             return

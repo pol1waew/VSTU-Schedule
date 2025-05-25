@@ -41,6 +41,13 @@ class Utilities:
 
     @classmethod
     def check_abstract_event(cls, abstract_event : AbstractEvent) -> tuple[bool, SafeText]:
+        """Check given AbstractEvent for models double usage
+
+        Returns:
+            a tuple of state of double usage and message for user notification. 
+            If no model duplicating found then message will be empty
+        """
+        
         funcs = [Utilities.check_for_participants_duplicate, Utilities.check_for_places_duplicate]
         message = format_html(cls.HEADER_MESSAGE_TEMPLATE, abstract_event.get_absolute_url(), str(abstract_event))
         is_anything_found = False
@@ -59,6 +66,13 @@ class Utilities:
 
     @classmethod
     def check_for_participants_duplicate(cls, abstract_event : AbstractEvent) -> tuple[bool, SafeText|None]:
+        """Checks for EventPartcipant double usage
+
+        Returns:
+            a tuple of state of double usage and message for user notification. 
+            If EventParticipants not duplicating then message will be empty
+        """
+
         other_aes = AbstractEvent.objects.filter(participants__in=abstract_event.participants.all(), 
                                                  abstract_day=abstract_event.abstract_day,
                                                  time_slot=abstract_event.time_slot).exclude(pk=abstract_event.pk).distinct()
@@ -81,6 +95,13 @@ class Utilities:
     
     @classmethod
     def check_for_places_duplicate(cls, abstract_event : AbstractEvent) -> tuple[bool, SafeText|None]:
+        """Checks for EventPlace double usage
+
+        Returns:
+            a tuple of state of double usage and message for user notification. 
+            If EventPlace not duplicating then message will be empty
+        """
+        
         other_aes = AbstractEvent.objects.filter(places__in=abstract_event.places.all(), 
                                                  abstract_day=abstract_event.abstract_day,
                                                  time_slot=abstract_event.time_slot).exclude(pk=abstract_event.pk).distinct()
@@ -137,6 +158,11 @@ class ReadAPI:
         self.found_models = model.objects.filter(**self.filter_query)
 
     def get_found_models(self):
+        """Returns found models
+
+        Can be empty if nothing found
+        """
+        
         return self.found_models
     
     @staticmethod
@@ -168,8 +194,6 @@ class WriteAPI:
     @staticmethod
     def create_event(date_ : str|date, abstract_event : AbstractEvent):
         """Create new Event from abstract_event on specified date
-        
-        Needs to manualy aplly DayDateOverrides and EventCanceles after
         """
 
         if isinstance(date_, str):
@@ -192,6 +216,8 @@ class WriteAPI:
     @staticmethod
     def get_semester_filling_parameters(abstract_event : AbstractEvent):
         """Intended for internal usage
+        
+        Returns semester filling parameters for given AbstarctEvent
 
         Returns:
             semester_start_date, 
@@ -225,7 +251,7 @@ class WriteAPI:
 
     @classmethod
     def fill_semester(cls, abstract_event : AbstractEvent):
-        """Take abstract_event and fill semester
+        """Creates Events from given AbstractEvent for every semester working day
         """
 
         # creates single Event 
@@ -269,7 +295,7 @@ class WriteAPI:
 
     @classmethod
     def fill_event_table(cls, abstract_event):
-        """Clear Event table and fill it from abstract_event
+        """Clear Event table and fill it from given AbstractEvent
         """
         
         # deleting only not overriden events
