@@ -1,10 +1,13 @@
 from django.db.models import QuerySet
 from django.urls import reverse
 from django.utils.html import format_html
+from django.http import HttpResponse
+from django.utils.safestring import SafeText
 from datetime import datetime, date, timedelta
 import api.utility_filters as filters
 from itertools import islice
 import xlsxwriter
+import io
 from api.models import (
     CommonModel,
     AbstractEvent,
@@ -28,29 +31,34 @@ from api.models import (
 
 
 class Utilities:
-    MESSAGE_TEMPLATE = '<a href="{}">{}</a> / {}<br>'
-    PARTICIPANTS_BASE_MESSAGE = "В сохранённом абс. событии ПРЕПОДАВАТЕЛИ одновременно участвуют в других абс. событиях:<br>"
+    HEADER_MESSAGE_TEMPLATE = 'В абс. событии <a href="{}">{}</a><br><br>'
+    DUPLICATE_MESSAGE_TEMPLATE = '<a href="{}">{}</a> / {}<br>'
+    PARTICIPANTS_BASE_MESSAGE = 'ПРЕПОДАВАТЕЛИ одновременно участвуют в других абс. событиях:<br>'
     PARTICIPANT_MESSAGE_TEMPLATE = '<a href="{}">{}</a>, '
-    PLACES_BASE_MESSAGE = "В сохранённом абс. событии АУДИТОРИИ одновременно задействованы в других абс. событиях:<br>"
+    PLACES_BASE_MESSAGE = 'АУДИТОРИИ одновременно задействованы в других абс. событиях:<br>'
     PLACE_MESSAGE_TEMPLATE = '<a href="{}">{}</a>, '
 
 
     @classmethod
-    def check_abstract_event(cls, abstract_event : AbstractEvent):
+    def check_abstract_event(cls, abstract_event : AbstractEvent) -> tuple[bool, SafeText]:
         funcs = [Utilities.check_for_participants_duplicate, Utilities.check_for_places_duplicate]
-        messages = []
+        message = format_html(cls.HEADER_MESSAGE_TEMPLATE, abstract_event.get_absolute_url(), str(abstract_event))
+        is_anything_found = False
 
         for f in funcs:
-            state, message = f(abstract_event)
+            is_double_usage_found, m = f(abstract_event)
             
-            if state:
-                messages.append(message)
+            if is_double_usage_found:
+                is_anything_found = True
 
-        return messages
+                message += m
+                message += format_html("<br>")
+        message = format_html(message[:-4])
 
+        return is_anything_found, message
 
     @classmethod
-    def check_for_participants_duplicate(cls, abstract_event : AbstractEvent):
+    def check_for_participants_duplicate(cls, abstract_event : AbstractEvent) -> tuple[bool, SafeText|None]:
         other_aes = AbstractEvent.objects.filter(participants__in=abstract_event.participants.all(), 
                                                  abstract_day=abstract_event.abstract_day,
                                                  time_slot=abstract_event.time_slot).exclude(pk=abstract_event.pk).distinct()
@@ -58,23 +66,21 @@ class Utilities:
         if not other_aes.exists():
             return False, None
         
-        message = format_html(cls.PARTICIPANTS_BASE_MESSAGE)
-        message_template = cls.MESSAGE_TEMPLATE
-        participants_template = cls.PARTICIPANT_MESSAGE_TEMPLATE
+        return_message = format_html(cls.PARTICIPANTS_BASE_MESSAGE)
         
         for ae in other_aes:
             p_urls = format_html("")
             
             for p in abstract_event.participants.filter(pk__in=ae.participants.values_list("pk", flat=True)):
-                p_urls += format_html(participants_template, p.get_absolute_url(), str(p.name))
+                p_urls += format_html(cls.PARTICIPANT_MESSAGE_TEMPLATE, p.get_absolute_url(), str(p.name))
             p_urls = format_html(p_urls[:-2])
             
-            message += format_html(message_template, ae.get_absolute_url(), str(ae), p_urls)
+            return_message += format_html(cls.DUPLICATE_MESSAGE_TEMPLATE, ae.get_absolute_url(), str(ae), p_urls)
 
-        return True, message
+        return True, return_message
     
     @classmethod
-    def check_for_places_duplicate(cls, abstract_event : AbstractEvent):
+    def check_for_places_duplicate(cls, abstract_event : AbstractEvent) -> tuple[bool, SafeText|None]:
         other_aes = AbstractEvent.objects.filter(places__in=abstract_event.places.all(), 
                                                  abstract_day=abstract_event.abstract_day,
                                                  time_slot=abstract_event.time_slot).exclude(pk=abstract_event.pk).distinct()
@@ -82,20 +88,18 @@ class Utilities:
         if not other_aes.exists():
             return False, None
         
-        message = format_html(cls.PLACES_BASE_MESSAGE)
-        message_template = cls.MESSAGE_TEMPLATE
-        places_template = cls.PLACE_MESSAGE_TEMPLATE
+        return_message = format_html(cls.PLACES_BASE_MESSAGE)
         
         for ae in other_aes:
             p_urls = format_html("")
             
             for p in abstract_event.places.filter(pk__in=ae.places.values_list("pk", flat=True)):
-                p_urls += format_html(places_template, p.get_absolute_url(), str(p))
+                p_urls += format_html(cls.PLACE_MESSAGE_TEMPLATE, p.get_absolute_url(), str(p))
             p_urls = format_html(p_urls[:-2])
             
-            message += format_html(message_template, ae.get_absolute_url(), str(ae), p_urls)
+            return_message += format_html(cls.DUPLICATE_MESSAGE_TEMPLATE, ae.get_absolute_url(), str(ae), p_urls)
 
-        return True, message
+        return True, return_message
 
 
 class ReadAPI:
@@ -259,64 +263,85 @@ class WriteAPI:
             
             if reader.get_found_models().exists():
                 for e in reader.get_found_models():
-                    cls.override_event_date(ddo, e)
+                    cls.apply_date_override(ddo, e)
 
             reader.remove_last_filter()
 
     @classmethod
-    def fill_event_table(cls, abstract_events, full_clear = False):
-        """Clear event table and fill it from abstract_events
-
-        Use full_clear for clearing all event table
-        instead events from abstract event
+    def fill_event_table(cls, abstract_event):
+        """Clear Event table and fill it from abstract_event
         """
         
         # deleting only not overriden events
         filter_query = filters.EventFilter.not_overriden()
 
         try:
-            iterator = iter(abstract_events)
+            iterator = iter(abstract_event)
         except TypeError:
-            # deleting Events only for specified AbstractEvents
-            if not full_clear:
-                filter_query.update({"abstract_event__pk" : abstract_events.pk})
+            # deleting Events only for specified AbstractEvent
+            filter_query.update({"abstract_event__pk" : abstract_event.pk})
 
             Event.objects.filter(**filter_query).delete()
             
             # filling semester by Events from abstract_event
-            cls.fill_semester(abstract_events)
+            cls.fill_semester(abstract_event)
         else:
             # deleting Events only for specified AbstractEvents
-            if not full_clear:
-                filter_query.update({"abstract_event__in" : abstract_events})
+            filter_query.update({"abstract_event__in" : abstract_event})
 
             Event.objects.filter(**filter_query).delete()
             
             # filling semester by Events from abstract_event
-            for ae in abstract_events:
+            for ae in abstract_event:
                 cls.fill_semester(ae)
                 
         return True
     
-    @classmethod
-    def override_event_date(cls, override : DayDateOverride, event : Event):
-        """Apply DayDateOverride to given events
+    @staticmethod
+    def update_events(abstract_event : AbstractEvent, update_non_m2m : bool = True, update_m2m : bool = True):
+        """Refresh fields of Events with given AbstractEvent
+        """
         
-        Use override=None to detach events from date override
+        if not update_non_m2m and not update_m2m:
+            return
+        
+        filter_query = {"abstract_event" : abstract_event}
+        filter_query.update(filters.EventFilter.not_overriden())
+
+        for e in Event.objects.filter(**filter_query):
+            if update_non_m2m:
+                e.kind_override = abstract_event.kind
+                e.subject_override = abstract_event.subject
+                e.time_slot_override = abstract_event.time_slot
+
+            if update_m2m:
+                e.participants_override.clear()
+                e.participants_override.add(*abstract_event.participants.all())
+                e.places_override.clear()
+                e.places_override.add(*abstract_event.places.all())
+
+            e.save()
+    
+    @staticmethod
+    def apply_date_override(date_override : DayDateOverride, event : Event, call_save_method : bool = True):
+        """Apply DayDateOverride to given Event
+        
+        Use date_override=None to detach Event from date override
         """
 
-        if override:
-            event.date = override.day_destination
-            event.date_override = override      
+        if date_override:
+            event.date = date_override.day_destination
+            event.date_override = date_override      
         else:
             event.date = event.date_override.day_source
-            event.date_override = None
 
-        event.save()
+        if call_save_method:
+            event.save()
 
     @staticmethod
-    def update_event_canceling(event_cancel : EventCancel, event : Event, call_save_method : bool = True):
-        """
+    def apply_event_canceling(event_cancel : EventCancel, event : Event, call_save_method : bool = True):
+        """Apply EventCancel to given Event
+
         Use event_cancel=None to undo event cancel
         """
 
@@ -331,30 +356,36 @@ class WriteAPI:
             event.save()
 
     @staticmethod
-    def export_changes_file(abs_event_changes):
-        export_path = "change_files/"
-        workbook = xlsxwriter.Workbook(f"{export_path}{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}.xlsx")
+    def make_changes_file(abs_event_changes) -> HttpResponse|None:
+        """Makes XLS file for given AbstractEventChanges
+        """
+        if not abs_event_changes.exists():
+            return None
+        
+        output = io.BytesIO()
+        workbook = xlsxwriter.Workbook(output)
         worksheet = workbook.add_worksheet()
 
-        column_names = ["ГРУППА", "ДЕНЬ НЕДЕЛИ/УЧ. ЧАС", "ПРЕДМЕТ", "ИЗМЕНЕНО", "БЫЛО", "СТАЛО"]
-        # дата создания change file поле - 1 колонка
+        column_names = ["ДАТА СОЗДАНИЯ", "ГРУППА", "ДЕНЬ НЕДЕЛИ/УЧ. ЧАС", "ПРЕДМЕТ", "ИЗМЕНЕНО", "БЫЛО", "СТАЛО"]
         for i in range(len(column_names)):
             worksheet.write(0, i, column_names[i])
 
         row = 2
         for aec in abs_event_changes:
-            data = aec.export()
-
-            for changes in data:
+            for changes in aec.export():
                 for i in range(len(changes)):
                     worksheet.write(row, i, changes[i])
 
                 row += 1
 
             row += 1
-
-        # удаление в отдельный action
-        abs_event_changes.delete()
         
         worksheet.autofit()
         workbook.close()
+
+        output.seek(0)
+
+        response = HttpResponse(output, content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        response["Content-Disposition"] = f"attachment; filename={datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}.xlsx"
+
+        return response

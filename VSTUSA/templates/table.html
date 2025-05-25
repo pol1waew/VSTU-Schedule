@@ -5,7 +5,9 @@
     </div>
 
     <div style="display: flex;">
-        {% include "calendarTable.html" %}
+        {% if calendar_visibile == "1" %}
+            {% include "calendarTable.html" %}
+        {% endif %}
 
         <table class="entries-table">
             <thead>
@@ -38,7 +40,13 @@
                             <td 
                             {% if event.is_event_canceled and entry|is_full_row_canceled:forloop.counter %} class="canceled-cell" {% endif %} 
                             name="c2d{{ forloop.parentloop.counter }}" rowspan="{{ row_spans|list_item:forloop.counter }}">
-                                {{ event.subject_override }} ({{ event.kind_override }})
+                                {{ event.subject_override }}
+                                {% if event.kind_override %}
+                                    ({{ event.kind_override }})
+                                {% endif %}
+                                {% if event.abstract_event.holds_on_date %}
+                                    (только {{ event.abstract_event.holds_on_date }})
+                                {% endif %}
                             </td>
                             <td 
                             {% if event.is_event_canceled and entry|is_full_row_canceled:forloop.counter %} class="canceled-cell" {% endif %} 

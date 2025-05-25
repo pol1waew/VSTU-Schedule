@@ -36,7 +36,7 @@
                 {% endfor %}
             </select>
 
-            <button type="submit"id="submit-button" onclick="this.form.submit()" style="margin-left: 20px;">Показать</button>
+            <button type="submit" id="submit-button" onclick="this.form.submit()" style="margin-left: 20px;">Показать</button>
         </div>
         
         <div style="margin-top: 20px;">
@@ -58,6 +58,15 @@
             style="display: none;"
         {% endif %}
         >
+            <div style="display: flex; margin-top: auto; margin-bottom: auto;">
+                <input type="checkbox" id="show-calendar-checkbox" name="calendar_visibility"
+                    {% if calendar_visibile == "1" %}
+                        checked
+                    {% endif %}
+                >
+                <label for="show-calendar-checkbox">Показывать календарь</label><br>
+            </div>
+            
             <select class="subject-pillbox" name="subject[]" multiple="multiple">
                 {% for subject in subjects %}
                     <option value="{{ subject }}" {% if subject in selected.subject %} selected {% endif %}>{{ subject }}</option>

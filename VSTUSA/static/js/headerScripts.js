@@ -94,6 +94,9 @@ document.onkeydown = function(e) {
     if (e.key === "Enter") {
         document.getElementById("header-form").submit();
     }
+    else if (e.key === "Control") {
+        update_filters_visibility();
+    }
     else if (e.key === "Backspace") {
         drop_filters();
     }
@@ -143,4 +146,6 @@ function drop_filters() {
 
     document.getElementById("left-date").value = "none";
     document.getElementById("right-date").value = "none";
+    
+    document.getElementById("show-calendar-checkbox").checked = true;
 }

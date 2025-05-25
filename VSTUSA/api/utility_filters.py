@@ -63,6 +63,7 @@ class ParticipantFilter(UtilityFilterBase):
     @staticmethod
     def by_name(name : str|list[str]):
         """
+        
         Use list of participant names for OR behaviour
         """
 
@@ -74,6 +75,7 @@ class ParticipantFilter(UtilityFilterBase):
     @staticmethod
     def by_role(role : str|list[str]):
         """
+
         Use list of participant roles for OR behaviour
         """
         
@@ -87,6 +89,7 @@ class PlaceFilter(UtilityFilterBase):
     @classmethod
     def by_repr(cls, repr : str|list[str]):
         """
+
         Use list of places repr for OR behaviour
         """
 
@@ -107,6 +110,7 @@ class PlaceFilter(UtilityFilterBase):
     @staticmethod
     def by_building(building : str|list[str]):
         """
+
         Use list of place buildings for OR behaviour
         """
 
@@ -118,6 +122,7 @@ class PlaceFilter(UtilityFilterBase):
     @staticmethod
     def by_room(room : str|list[str]):
         """
+
         Use list of place rooms for OR behaviour
         """
         
@@ -131,6 +136,7 @@ class SubjectFilter(UtilityFilterBase):
     @staticmethod
     def by_name(name : str|list[str]):
         """
+
         Use list of subject names for OR behaviour
         """
 
@@ -144,6 +150,7 @@ class TimeSlotFilter(UtilityFilterBase):
     @staticmethod
     def by_repr(repr : str|list[str]):
         """
+
         Use list of time slots repr for OR behaviour
         """
 
@@ -162,6 +169,7 @@ class KindFilter(UtilityFilterBase):
     @staticmethod
     def by_name(name : str|list[str]):
         """
+
         Use list of subject names for OR behaviour
         """
 
@@ -173,18 +181,12 @@ class KindFilter(UtilityFilterBase):
 
 class EventFilter(UtilityFilterBase):
     @staticmethod
+    def overriden():
+        return {"is_event_overriden" : True}
+    
+    @staticmethod
     def not_overriden():
-        """
-        Event overriden when at least one of fields (kind, subject, time slot, cancel)
-        differ from AbstractEvent fields
-        """
-        
-        return {
-            "abstract_event__kind" : F("kind_override"),
-            "abstract_event__subject" : F("subject_override"),
-            "abstract_event__time_slot" : F("time_slot_override"),
-            "is_event_canceled" : False
-        }
+        return {"is_event_overriden" : False}
 
     @staticmethod
     def by_schedule(schedule):

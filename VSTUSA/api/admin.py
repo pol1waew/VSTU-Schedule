@@ -1,4 +1,5 @@
 from api.utilities import Utilities, ReadAPI, WriteAPI
+import api.utility_filters as filters
 from django.contrib import admin, messages
 from django.contrib.admin.actions import delete_selected
 from django.forms import BaseInlineFormSet
@@ -117,21 +118,75 @@ class ScheduleAdmin(BaseAdmin):
 
 @admin.register(Event)
 class EventAdmin(BaseAdmin):
+    class EventOverridenFilter(admin.SimpleListFilter):
+        title = "Событие перезаписано"
+        parameter_name = "is_overriden"
+        OVERRIDEN_NAMES = ("Перезаписан", "Перезаписаны")
+        NOT_OVERRIDEN_NAMES = ("Не перезаписан", "Не перезаписаны")
+
+        def lookups(self, request, model_admin):
+            return (self.OVERRIDEN_NAMES, self.NOT_OVERRIDEN_NAMES)
+
+        def queryset(self, request, queryset):
+            if self.value() in self.OVERRIDEN_NAMES:
+                return queryset.filter(**filters.EventFilter.overriden())
+            elif self.value() in self.NOT_OVERRIDEN_NAMES:
+                return queryset.filter(**filters.EventFilter.not_overriden())
+            
+            return queryset
+
+    
     list_display = ("subject_override", "kind_override", "date", "time_slot_override")
     search_fields = ("subject_override__name", "participants_override__name", "date")
-    list_filter = ("kind_override", "is_event_canceled")
+    list_filter = (EventOverridenFilter, "kind_override", "is_event_canceled")
 
 
 @admin.register(AbstractEventChanges)
-class AbstractEventChanges(BaseAdmin):
-    list_display = ("datemodified", "__str__")
-    list_filter = ("is_created", "is_deleted")
+class AbstractEventChangesAdmin(BaseAdmin):
+    list_display = ("datemodified", "__str__", "is_exported")
+    list_filter = ("is_created", "is_deleted", "is_exported")
 
-    actions = ["export"]
+    actions = ["delete_exported", "export_selected", "export_not_exported"]
 
-    @admin.action(description="Экспорт")
-    def export(modeladmin, request, queryset):
-        WriteAPI.export_changes_file(queryset)
+    @admin.action(description="Удалить экспортированные")
+    def delete_exported(modeladmin, request, queryset):
+        AbstractEventChanges.objects.filter(is_exported=True).delete()
+
+        messages.success(request, "Успешно удалены")
+
+    @admin.action(description="Экспортировать выбранное")
+    def export_selected(modeladmin, request, queryset):
+        response = WriteAPI.make_changes_file(queryset)
+
+        messages.success(request, "Успешно экспортированы")
+
+        return response
+
+    @admin.action(description="Экспортировать не экспортированные")
+    def export_not_exported(modeladmin, request, queryset):
+        changes = AbstractEventChanges.objects.filter(is_exported=False)
+
+        if not changes.exists():
+            messages.warning(request, "Нечего экспортировать: все изменения экспортированы")
+
+            return
+
+        response = WriteAPI.make_changes_file(changes)
+
+        messages.success(request, "Успешно экспортированы")
+
+        return response
+        
+    def changelist_view(self, request, extra_context = None):
+        if "action" in request.POST and request.POST["action"] in ["export_not_exported", "delete_exported"]:
+            post = request.POST.copy()
+
+            # makes request never empty
+            post.update({ admin.helpers.ACTION_CHECKBOX_NAME : "0" })
+
+            request._set_post(post)
+
+        return super(AbstractEventChangesAdmin, self).changelist_view(request, extra_context)
 
 
 @admin.register(AbstractEvent)
@@ -140,7 +195,7 @@ class AbstractEventAdmin(BaseAdmin):
     search_fields = ("subject__name", "kind__name")
     list_filter = ("kind__name",)
 
-    actions = ["delete_events", "fill", "test"]
+    actions = ["delete_events", "fill", "check_fields", "test"]
 
     @admin.action(description="Удалить связанные события")
     def delete_events(modeladmin, request, queryset):
@@ -154,39 +209,13 @@ class AbstractEventAdmin(BaseAdmin):
         else:
             messages.error(request, "Произошла ошибка")
 
-    @admin.action(description="test")
-    def test(modeladmin, request, queryset):
-        obj = AbstractEvent.objects.filter(holds_on_date="2025-05-19").first()
+    @admin.action(description="Проверить на дублирование")
+    def check_fields(modeladmin, request, queryset):
+        for ae in queryset:
+            is_double_usage_found, message = Utilities.check_abstract_event(ae)
 
-        state, message = Utilities.check_for_participants_duplicate(obj)
-
-        if state:
-            messages.warning(request, message)
-
-        state, message = Utilities.check_for_places_duplicate(obj)
-
-        if state:
-            messages.warning(request, message)  
-        
-        return
-        ae = AbstractEvent()
-        ae.kind = EventKind.objects.first()
-        ae.subject = Subject.objects.first()
-        ae.abstract_day = AbstractDay.objects.first()
-        ae.time_slot = TimeSlot.objects.first()
-        ae.holds_on_date = "2025-05-19"
-        ae.schedule = Schedule.objects.first()
-        ae.save()
-        ae.participants.set(EventParticipant.objects.filter(name__in=["Синкевич Д.", "Гилка В.В.", "ПрИн-466"]))
-        ae.places.set(EventPlace.objects.filter(room__in=["902а", "902в"]))
-        ae.save()
-
-    def save_model(self, request, obj, form, change):
-        for message in Utilities.check_abstract_event(obj):
-            messages.warning(request, message)
-
-        super(AbstractEventAdmin, self).save_model(request, obj, form, change)
-
+            if is_double_usage_found:
+                messages.warning(request, message)
 
 
 @admin.register(AbstractDay)
@@ -239,7 +268,7 @@ class DayDateOverrideAdmin(BaseAdmin):
             reader.find_models(Event)
             
             for e in reader.get_found_models():
-                WriteAPI.override_event_date(ddo, e)
+                WriteAPI.apply_date_override(ddo, e)
 
         messages.success(request, "Успешно перенесены")
 

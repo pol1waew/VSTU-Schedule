@@ -282,15 +282,18 @@ class AbstractEventChanges(CommonModel):
     group = models.TextField(null=True, default="", verbose_name="Группа")
     date_time = models.TextField(null=True, default="", verbose_name="Дата и учебный час")
     subject = models.TextField(null=True, verbose_name="Занятие")
-    is_created = models.BooleanField(verbose_name="Создано", default=False)
-    is_deleted = models.BooleanField(verbose_name="Удалено", default=False)
-    origin_teachers = models.TextField(null=True, default="", verbose_name="Изначальные участники")
-    origin_places = models.TextField(null=True, default="", verbose_name="Изначальные места")
+    is_created = models.BooleanField(verbose_name="Абстрактное событие создано", default=False)
+    is_deleted = models.BooleanField(verbose_name="Абстрактное событие удалено", default=False)
+    is_exported = models.BooleanField(verbose_name="Абстрактное событие экспортировано", default=False)
+    origin_teachers = models.TextField(null=True, blank=True, default="", verbose_name="Изначальные участники")
+    origin_places = models.TextField(null=True, blank=True, default="", verbose_name="Изначальные места")
     origin_holds_on_date = models.TextField(null=True, blank=True, default="", verbose_name="Изначальные заданный день")
+    origin_kind = models.TextField(null=True, blank=True, default="", verbose_name="Изначальный тип")
     final_teachers = models.TextField(null=True, blank=True, default="", verbose_name="Участники после изменений")
     final_places = models.TextField(null=True, blank=True, default="", verbose_name="Места после изменений")
     final_date_time = models.TextField(null=True, blank=True, default="", verbose_name="Дата и учебный час после изменений")
     final_holds_on_date = models.TextField(null=True, blank=True, default="", verbose_name="Заданный день после изменений")
+    final_kind = models.TextField(null=True, blank=True, default="", verbose_name="Тип после изменений")
 
     def __repr__(self):
         return f"{self.group}, {self.date_time}, {self.subject}"
@@ -301,14 +304,31 @@ class AbstractEventChanges(CommonModel):
     def save(self, **kwargs):
         super().save(**kwargs)
 
-        if self.final_date_time and self.date_time == self.final_date_time or \
-            self.final_teachers and self.origin_teachers == self.final_teachers or \
-            self.final_places and self.origin_places == self.final_places or \
-            self.final_holds_on_date and self.origin_holds_on_date == self.final_holds_on_date:
-            self.delete()
+        # when logging AbsEvent deleting
+        # no need to validate fields
+        if self.is_deleted:
+            return
+
+        if self.final_teachers and self.origin_teachers == self.final_teachers:
+            self.final_teachers = None
+
+        if self.final_places and self.origin_places == self.final_places:
+            self.final_places = None
+
+        if self.final_date_time and self.date_time == self.final_date_time:
+            self.final_date_time = None
+
+        if self.final_holds_on_date and self.origin_holds_on_date == self.final_holds_on_date:
+            self.final_holds_on_date = None
+
+        if self.final_kind and self.origin_holds_on_date == self.final_kind:
+            self.final_kind = None
     
     @staticmethod
     def str_from_participants(participants):
+        """Makes formated str to store from given participants
+        """
+
         return_value = ""
 
         for p in participants:
@@ -318,10 +338,13 @@ class AbstractEventChanges(CommonModel):
         return return_value
     
     @staticmethod
-    def str_from_places(abstract_event):
+    def str_from_places(places):
+        """Makes formated str to store from given places
+        """
+
         return_value = ""
 
-        for p in abstract_event.places.all():
+        for p in places:
             return_value += f"{p}, "
         return_value = return_value[:-2]
 
@@ -332,40 +355,61 @@ class AbstractEventChanges(CommonModel):
         return f"{abstract_event.abstract_day} / {abstract_event.time_slot.alt_name}ч."
 
     def initialize(self, ae):
-        self.group = self.str_from_participants(ae.get_groups())
-
-        self.date_time = self.str_from_date_time(ae)
-
-        self.subject = ae.subject.name
-
-        self.origin_teachers = self.str_from_participants(ae.get_teachers())
+        """Fills models with origin values
+        """
         
-        self.origin_places = self.str_from_places(ae)
-
+        self.group = self.str_from_participants(ae.get_groups())
+        self.date_time = self.str_from_date_time(ae)
+        self.subject = ae.subject.name
+        self.origin_teachers = self.str_from_participants(ae.get_teachers())
+        self.origin_places = self.str_from_places(ae.places.all())
         self.origin_holds_on_date = ae.holds_on_date
+        self.origin_kind = ae.kind.name if ae.kind else ""
 
     def export(self):
-        if self.is_deleted:
-            return [[self.group, self.date_time, self.subject, "УДАЛЕНО"]]
+        """Prepare stored data to export
+        """
         
+        export_data_base = [self.datemodified.strftime('%Y-%m-%d %H:%M:%S'), self.group, self.date_time, self.subject]
         export_data = []
 
-        if self.is_created:
-            export_data.append([self.group, self.date_time, self.subject, "СОЗДАНО"])
+        if self.is_deleted:
+            export_data.append(export_data_base + ["УДАЛЕНО"])
+        else:
+            if self.is_created:
+                export_data.append(export_data_base + ["СОЗДАНО"])
 
-        if self.final_teachers:
-            export_data.append([self.group, self.date_time, self.subject, "ПРЕПОДАВАТЕЛЬ", self.origin_teachers, self.final_teachers])
+            if self.final_teachers:
+                export_data.append(export_data_base + ["ПРЕПОДАВАТЕЛЬ", self.origin_teachers, self.final_teachers])
 
-        if self.final_places:
-            export_data.append([self.group, self.date_time, self.subject, "АУДИТОРИЯ", self.origin_places, self.final_places])
+            if self.final_places:
+                export_data.append(export_data_base + ["АУДИТОРИЯ", self.origin_places, self.final_places])
+            
+            if self.final_date_time:
+                export_data.append(export_data_base + ["ДЕНЬ НЕДЕЛИ/УЧ. ЧАС", self.date_time, self.final_date_time])
+
+            if self.final_holds_on_date:
+                export_data.append(export_data_base + ["ЯВНАЯ ДАТА", self.origin_holds_on_date, self.final_holds_on_date])
+
+            if self.final_kind:
+                export_data.append(export_data_base + ["ТИП", self.origin_kind, self.final_kind])
+
+        self.is_exported = True
         
-        if self.final_date_time:
-            export_data.append([self.group, self.date_time, self.subject, "ДЕНЬ НЕДЕЛИ/УЧ. ЧАС", self.date_time, self.final_date_time])
+        self.save()
 
-        if self.final_holds_on_date:
-            export_data.append([self.group, self.date_time, self.subject, "ЯВНАЯ ДАТА", self.origin_holds_on_date, self.final_holds_on_date])
+        self.clear_relation_with_abs_event()
 
         return export_data
+    
+    def clear_relation_with_abs_event(self):
+        """Removes all references to self from related AbstractEvents
+        """
+        
+        for ae in AbstractEvent.objects.filter(changes=self):
+            ae.changes = None
+
+            ae.save()
 
 
 # need manualy fill semester
@@ -374,19 +418,27 @@ class AbstractEvent(CommonModel):
         verbose_name = "Абстрактное событие"
         verbose_name_plural = "Абстрактные события"
 
-    kind = models.ForeignKey(EventKind, null=True, blank=True, on_delete=models.PROTECT, verbose_name="Тип")
+    kind = models.ForeignKey(EventKind, null=True, blank=True, default=None, on_delete=models.PROTECT, verbose_name="Тип")
     subject = models.ForeignKey(Subject, on_delete=models.PROTECT, verbose_name="Предмет")
     participants = models.ManyToManyField(EventParticipant, verbose_name="Участники")
     places = models.ManyToManyField(EventPlace, verbose_name="Места")
     abstract_day = models.ForeignKey(AbstractDay, on_delete=models.PROTECT, verbose_name="Абстрактный день")
     time_slot = models.ForeignKey(TimeSlot, on_delete=models.PROTECT, verbose_name="Временной интервал")
-    # single date. for many dates you should create many events
+    # for many dates should create many AbstractEvents
     holds_on_date = models.DateField(null=True, blank=True, verbose_name="Проводится только в заданный день")
     schedule = models.ForeignKey(Schedule, null=True, on_delete=models.CASCADE, related_name="events", verbose_name="Расписание")
     changes = models.ForeignKey(AbstractEventChanges, null=True, blank=True, on_delete=models.SET_NULL, editable=True, verbose_name="Изменения")
 
     def __repr__(self):
         return f"Занятие по {self.subject.name}, {self.time_slot.alt_name}ч."
+    
+    def save(self, **kwargs):
+        super().save(**kwargs)
+
+        from api.utilities import WriteAPI
+
+        # calling here because need updated AbstractEvent reference inside Events
+        WriteAPI.update_events(self, update_m2m=False)
     
     @property
     def department(self):
@@ -400,16 +452,73 @@ class AbstractEvent(CommonModel):
     
     def get_absolute_url(self):
         return reverse("admin:api_abstractevent_change", args=[self.pk])
-    
-    def save(self, **kwargs):
-        super().save(**kwargs)
 
-        from api.utilities import WriteAPI
+    def generate_changes_on_creating(self):
+        """Create AbstractEventChange model
 
-        WriteAPI.fill_event_table(self)
+        Should be called when AbstractEvent model creates
+
+        Not saving self instance on complete
+        """
+        
+        changes = AbstractEventChanges()
+        
+        changes.date_time = AbstractEventChanges.str_from_date_time(self)
+        changes.subject = self.subject.name
+        changes.is_created = True
+
+        if self.holds_on_date:
+            changes.final_holds_on_date = self.holds_on_date
+
+        changes.final_kind = self.kind.name if self.kind else ""
+
+        changes.save()
+
+        self.changes = changes
+
+    def update_change_model(self):
+        """Writes AbsractEvent changes into AbstractEventChange model
+
+        If no changes done do nothing. Looking for only non m2m fields
+
+        Not saving self instance on complete
+        """
+
+        previous_ae = AbstractEvent.objects.get(pk=self.pk)
+
+        is_date_time_changed = previous_ae.abstract_day != self.abstract_day or previous_ae.time_slot != self.time_slot
+        is_holds_on_date_changed = previous_ae.holds_on_date != self.holds_on_date
+        is_kind_changed = previous_ae.kind != self.kind
+
+        # continue only if something changed
+        if not is_date_time_changed and not is_holds_on_date_changed and not is_kind_changed:
+            return
+        
+        changes = previous_ae.changes
+
+        if not changes:
+            changes = AbstractEventChanges()
+
+            changes.initialize(previous_ae)
+
+        if is_date_time_changed:
+            changes.final_date_time = AbstractEventChanges.str_from_date_time(self)
+
+        if is_holds_on_date_changed:
+            changes.final_holds_on_date = self.holds_on_date
+
+        if is_kind_changed:
+            changes.final_kind = self.kind.name if self.kind else ""
+
+        changes.save()
+
+        self.changes = changes
 
 @receiver(m2m_changed, sender=AbstractEvent.participants.through)
 def participants_changed(sender, instance, action, reverse, model, pk_set, **kwargs):
+    """Writes AbstractEvent participants changes and update related Events
+    """
+
     if action == "pre_add" or action == "pre_remove":
         if not instance.changes:
             changes = AbstractEventChanges()
@@ -422,6 +531,10 @@ def participants_changed(sender, instance, action, reverse, model, pk_set, **kwa
 
             instance.save()
     elif action == "post_add" or action == "post_remove":
+        from api.utilities import WriteAPI
+
+        WriteAPI.update_events(instance, update_non_m2m=False)
+
         instance.changes.group = AbstractEventChanges.str_from_participants(instance.get_groups())
         instance.changes.final_teachers = AbstractEventChanges.str_from_participants(instance.get_teachers())
 
@@ -429,6 +542,9 @@ def participants_changed(sender, instance, action, reverse, model, pk_set, **kwa
 
 @receiver(m2m_changed, sender=AbstractEvent.places.through)
 def places_changed(sender, instance, action, reverse, model, pk_set, **kwargs):
+    """Writes AbstractEvent places changes and update related Events
+    """
+
     if action == "pre_add" or action == "pre_remove":
         if not instance.changes:
             changes = AbstractEventChanges()
@@ -441,59 +557,33 @@ def places_changed(sender, instance, action, reverse, model, pk_set, **kwargs):
 
             instance.save()
     elif action == "post_add" or action == "post_remove":
-        instance.changes.final_places = AbstractEventChanges.str_from_places(instance)
+        from api.utilities import WriteAPI
+
+        WriteAPI.update_events(instance, update_non_m2m=False)
+        
+        instance.changes.final_places = AbstractEventChanges.str_from_places(instance.places.all())
 
         instance.changes.save()
 
 @receiver(pre_save, sender=AbstractEvent)
 def on_abstract_event_pre_save(sender, instance, **kwargs):
-    # if AbsEvent created
+    # AbsEvent created
     if instance.pk is None:
-        changes = AbstractEventChanges()
-        
-        changes.date_time = AbstractEventChanges.str_from_date_time(instance)
-        changes.subject = instance.subject.name
-        changes.is_created = True
-
-        changes.save()
-
-        instance.changes = changes
+        instance.generate_changes_on_creating()
 
         return
 
-    previous_ae = AbstractEvent.objects.get(pk=instance.pk)
-
-    is_date_time_changed = previous_ae.abstract_day != instance.abstract_day or previous_ae.time_slot != instance.time_slot
-    is_holds_on_date_changed = previous_ae.holds_on_date != instance.holds_on_date
-
-    # continue only if something changed
-    if not is_date_time_changed and not is_holds_on_date_changed:
-        return
-    
-    changes = previous_ae.changes
-
-    if not changes:
-        changes = AbstractEventChanges()
-
-        changes.initialize(previous_ae)
-
-    if is_date_time_changed:
-        changes.final_date_time = AbstractEventChanges.str_from_date_time(instance)
-
-    if is_holds_on_date_changed:
-        changes.final_holds_on_date = instance.holds_on_date
-
-    changes.save()
-
-    instance.changes = changes
+    instance.update_change_model()
 
 @receiver(pre_delete, sender=AbstractEvent)
 def on_abstract_event_delete(sender, instance, **kwargs): 
-    if instance.changes:
+    if instance.changes and instance.changes.is_created and not instance.changes.is_exported:
         instance.changes.delete()
-
-        if instance.changes.is_created:
-            return
+        print("ABSEVENT DELETING 222222")
+        
+        return
+    
+    print("ABSEVENT DELETING 11111")
 
     changes = AbstractEventChanges()
 
@@ -527,10 +617,8 @@ class EventCancel(CommonModel):
         reader.find_models(Event)
         
         for e in reader.get_found_models():
-            WriteAPI.update_event_canceling(self, e)
+            WriteAPI.apply_event_canceling(self, e)
 
-# if EventCancel moved to other date
-# need to undo canceling
 @receiver(pre_save, sender=EventCancel)
 def on_event_cancel_date_override(sender, instance, **kwargs):
     created = instance.pk is None
@@ -540,8 +628,9 @@ def on_event_cancel_date_override(sender, instance, **kwargs):
     
     previous_cancel = EventCancel.objects.get(pk=instance.pk)
 
-    # if Event was created or date changed
-    if not created and previous_cancel.date != instance.date:
+    # if EventCancel moved to other date
+    # need to undo Events canceling
+    if previous_cancel.date != instance.date:
         from api.utilities import WriteAPI, ReadAPI
 
         reader = ReadAPI({"event_cancel" : previous_cancel})
@@ -549,7 +638,7 @@ def on_event_cancel_date_override(sender, instance, **kwargs):
         reader.find_models(Event)
         
         for e in reader.get_found_models():
-            WriteAPI.update_event_canceling(None, e)
+            WriteAPI.apply_event_canceling(None, e)
 
 @receiver(pre_delete, sender=EventCancel)
 def on_event_cancel_delete(sender, instance, **kwargs):
@@ -560,7 +649,7 @@ def on_event_cancel_delete(sender, instance, **kwargs):
     reader.find_models(Event)
     
     for e in reader.get_found_models():
-        WriteAPI.update_event_canceling(None, e)
+        WriteAPI.apply_event_canceling(None, e)
 
 
 class DayDateOverride(CommonModel):
@@ -577,7 +666,7 @@ class DayDateOverride(CommonModel):
     
     def save(self, **kwargs):
         super().save(**kwargs)
-        
+
         from api.utilities import WriteAPI, ReadAPI
         import api.utility_filters as filters
 
@@ -587,7 +676,28 @@ class DayDateOverride(CommonModel):
         reader.find_models(Event)
         
         for e in reader.get_found_models():
-            WriteAPI.override_event_date(self, e)
+            WriteAPI.apply_date_override(self, e)
+
+@receiver(pre_save, sender=DayDateOverride)
+def on_date_override_source_override(sender, instance, **kwargs):
+    created = instance.pk is None
+
+    if created:
+        return
+    
+    previous_override = DayDateOverride.objects.get(pk=instance.pk)
+
+    # if DayDateOverride moved to other date
+    # need to detach it from Events
+    if previous_override.day_source != instance.day_source:
+        from api.utilities import WriteAPI, ReadAPI
+
+        reader = ReadAPI({"date_override" : previous_override})
+        
+        reader.find_models(Event)
+
+        for e in reader.get_found_models():
+            WriteAPI.apply_date_override(None, e)
 
 @receiver(pre_delete, sender=DayDateOverride)
 def on_day_date_override_delete(sender, instance, **kwargs):
@@ -598,7 +708,7 @@ def on_day_date_override_delete(sender, instance, **kwargs):
     reader.find_models(Event)
     
     for e in reader.get_found_models():
-            WriteAPI.override_event_date(None, e)
+            WriteAPI.apply_date_override(None, e)
 
 
 class Event(CommonModel):
@@ -607,15 +717,16 @@ class Event(CommonModel):
         verbose_name_plural = "События"
 
     date = models.DateField(null=True, blank=False, verbose_name="Дата")
-    date_override = models.ForeignKey(DayDateOverride, null=True, blank=True, editable=False, on_delete=models.SET_NULL, verbose_name="Перенос дня")
-    kind_override = models.ForeignKey(EventKind, null=True, on_delete=models.PROTECT, verbose_name="Тип")
+    date_override = models.ForeignKey(DayDateOverride, null=True, blank=True, editable=True, on_delete=models.SET_NULL, verbose_name="Перенос дня")
+    kind_override = models.ForeignKey(EventKind, null=True, blank=True, default=None, on_delete=models.PROTECT, verbose_name="Тип")
     subject_override = models.ForeignKey(Subject, null=True, on_delete=models.PROTECT, verbose_name="Предмет")
     participants_override = models.ManyToManyField(EventParticipant, verbose_name="Участники")
     places_override = models.ManyToManyField(EventPlace, verbose_name="Места")
     time_slot_override = models.ForeignKey(TimeSlot, null=True, on_delete=models.PROTECT, verbose_name="Временной интервал")
-    abstract_event = models.ForeignKey(AbstractEvent, null=True, on_delete=models.CASCADE, verbose_name="Абстрактное событие")
+    abstract_event = models.ForeignKey(AbstractEvent, null=True, editable=False, on_delete=models.CASCADE, verbose_name="Абстрактное событие")
     is_event_canceled = models.BooleanField(verbose_name="Событие отменено", default=False)
     event_cancel = models.ForeignKey(EventCancel, null=True, blank=True, on_delete=models.SET_NULL, verbose_name="Отмена события")
+    is_event_overriden = models.BooleanField(verbose_name="Событие перезаписано", editable=True, default=False)
 
     @property
     def department(self):
@@ -628,8 +739,64 @@ class Event(CommonModel):
         return self.participants_override.filter(role__in=[EventParticipant.Role.TEACHER, EventParticipant.Role.ASSISTANT])
 
     def __repr__(self):
-        return f"Занятие по {self.abstract_event.subject.name}"
-    
+        return f"Занятие по {self.abstract_event.subject.name}"    
+
+    def check_date_interactions(self):
+        if not self.date_override:
+            from api.utilities import WriteAPI, ReadAPI
+
+            reader = ReadAPI({"day_source" : self.date})
+            reader.add_filter({"department" : self.department})
+
+            reader.find_models(DayDateOverride)
+
+            if reader.get_found_models().exists():
+                WriteAPI.apply_date_override(reader.get_found_models().first(), self, call_save_method=False)
+
+            return
+
+        # if destination date from attached DayDateOverride
+        # differ from Event date
+        if self.date_override.day_destination != self.date:
+            # need detach DayDateOverride from Event
+            self.date_override = None
+
+    def check_canceling(self):
+        # skip manualy canceled events
+        if self.is_event_canceled and not self.event_cancel:
+            return
+
+        from api.utilities import WriteAPI, ReadAPI
+        import api.utility_filters as filters
+
+        reader = ReadAPI({"department" : self.department})
+        reader.add_filter(filters.DateFilter.from_singe_date(self.date))
+
+        reader.find_models(EventCancel)
+
+        if reader.get_found_models().exists():
+            WriteAPI.apply_event_canceling(reader.get_found_models().first(), self, False)
+        else:
+            self.is_event_canceled = False
+            self.event_cancel = None
+        
+
+@receiver(m2m_changed, sender=Event.participants_override.through)
+def participants_override_changed(sender, instance, action, reverse, model, pk_set, **kwargs):
+    if action == "post_add" or action == "post_remove":
+        if not instance.is_event_overriden and list(instance.participants_override.all()) != list(instance.abstract_event.participants.all()):
+            instance.is_event_overriden = True
+
+            instance.save()
+
+@receiver(m2m_changed, sender=Event.places_override.through)
+def places_override_changed(sender, instance, action, reverse, model, pk_set, **kwargs):
+    if action == "post_add" or action == "post_remove":
+        if not instance.is_event_overriden and list(instance.places_override.all()) != list(instance.abstract_event.places.all()):
+            instance.is_event_overriden = True
+
+            instance.save()
+
 @receiver(pre_save, sender=Event)
 def on_event_save(sender, instance, **kwargs):
     created = instance.pk is None
@@ -638,71 +805,23 @@ def on_event_save(sender, instance, **kwargs):
     if not created:
         previous_event = Event.objects.get(pk=instance.pk)
 
+        # check for override by non m2m fields
+        if not instance.is_event_overriden:
+            if instance.kind_override != instance.abstract_event.kind or \
+                instance.subject_override != instance.abstract_event.subject or \
+                instance.time_slot_override != instance.abstract_event.time_slot or \
+                instance.is_event_canceled:
+                instance.is_event_overriden = True
+
+    instance.check_date_interactions()
+            
     # if Event was created or date changed
+    # need to check for event canceling
     if created or previous_event.date != instance.date:
-        # skip manualy canceled events
-        if not created and previous_event.is_event_canceled and not previous_event.event_cancel:
-            return
-
-        from api.utilities import WriteAPI, ReadAPI
-        import api.utility_filters as filters
-
-        reader = ReadAPI({"department" : instance.department})
-        reader.add_filter(filters.DateFilter.from_singe_date(instance.date))
-
-        reader.find_models(EventCancel)
-
-        if reader.get_found_models().exists():
-            WriteAPI.update_event_canceling(reader.get_found_models().first(), instance, False)
-        else:
-            instance.is_event_canceled = False
-            instance.event_cancel = None
-
+        instance.check_canceling()
+        
     # if EventCancel was manualy setted in Event
     # but is_event_canceled not checked
     # make Event canceled
     if not created and not instance.is_event_canceled and not previous_event.event_cancel and instance.event_cancel:
         instance.is_event_canceled = True
-    
-
-
-
-## TODO
-## оптимизация сохранения
-## уведомление о проблемных записях
-## эндпоинт для визуализации (обобщённый класс)
-## Администрирование Django -> Администрирование расписания поменять название
-
-## обновить test_data
-
-## дублируются евенты с EventCancel
-## предусмотреть отвязку DayDateOverride если даты перестают совпадать с событием
-
-
-"""
-min расписаний 1
-макс 9
-авг 2
-
-1 30%
-2 30%
-9 У ОДНОГО
-
-950 ВСЕГО
-250 >= 3 ЭКСЕЛЕК
-108 >= 4
-"""
-
-"""каждый факультет каждый курс
-авг 4
-макс 15
-
-947 всего
-3>= 679
-4>= 530
-5>= 366
-6>= 258 человек
-8>= 102
-10>= 37 человек
-
-"""

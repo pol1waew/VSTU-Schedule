@@ -75,7 +75,8 @@ def index(request):
 
             "data" : data,
 
-            "addition_filters_visible" : request.POST.get("addition_filters_visible") if "addition_filters_visible" in request.POST else "0"
+            "addition_filters_visible" : request.POST.get("addition_filters_visible") if "addition_filters_visible" in request.POST else "0",
+            "calendar_visibile" : "1" if "calendar_visibility" in request.POST else "0"
     }
     
     return render(request, "index.html", context = data)
