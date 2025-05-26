@@ -52,13 +52,19 @@ def get_table_data(filters):
 def format_events(events):
     events = events.order_by("time_slot_override__start_time", "date")
 
-    # grouping by date
+    # grouping found events by date
     grouped_events = defaultdict(list)
 
     for e in events:
         grouped_events[e.date].append(e)
 
-    return list(grouped_events.values())
+    # sorting groups of events by date
+    ordered_grouped_events = []
+
+    for e in sorted(grouped_events.items()):
+        ordered_grouped_events.append(e[1])
+
+    return ordered_grouped_events
 
 
 def is_same_entries(first_entry, second_entry):
