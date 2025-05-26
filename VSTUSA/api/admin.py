@@ -140,6 +140,8 @@ class EventAdmin(BaseAdmin):
     search_fields = ("subject_override__name", "participants_override__name", "date")
     list_filter = (EventOverridenFilter, "kind_override", "is_event_canceled")
 
+    readonly_fields = ("is_event_overriden", "dateaccessed", "datemodified", "datecreated")
+
 
 @admin.register(AbstractEventChanges)
 class AbstractEventChangesAdmin(BaseAdmin):
@@ -227,7 +229,7 @@ class AbstractEventAdmin(BaseAdmin):
         else:
             messages.error(request, "Произошла ошибка")
 
-    @admin.action(description="Проверить на дублирование")
+    @admin.action(description="Проверить на накладки в расписании")
     def check_fields(modeladmin, request, queryset):
         """Checks for double usage selected AbstractEvents field values
         """

@@ -97,19 +97,26 @@ class PlaceFilter(UtilityFilterBase):
         """
 
         Use list of places repr for OR behaviour
+
+        repr must be in format: "{building} {room}" (separated by space)
         """
 
-        building = []
-        room = []
+        fitler_ = {}
 
-        for r in repr:
-            splited = r.split(" ", 1)
+        if type(repr) is list:
+            building = []
+            room = []
+            
+            for r in repr:
+                building.append(r.split(" ", 1)[0])
+                room.append(r.split(" ", 1)[1])
 
-            building.append(splited[0])
-            room.append(splited[1])
-
-        fitler_ = cls.by_building(building)
-        fitler_.update(cls.by_room(room))
+            fitler_ = cls.by_building(building)
+            fitler_.update(cls.by_room(room))
+        else:
+            print(repr)
+            fitler_ = cls.by_building(repr.split(" ", 1)[0])
+            fitler_.update(cls.by_room(repr.split(" ", 1)[1]))
 
         return fitler_
 
@@ -166,14 +173,17 @@ class TimeSlotFilter(UtilityFilterBase):
         Use list of time slots repr for OR behaviour
         """
 
-        alt_name = []
-        for r in repr:
-            alt_name.append(re.search(r"\d{1,2}\D+\d{1,2}", r)[0])
+        REG_EX = r"\d{1,2}\D+\d{1,2}"
 
         if type(repr) is list:
-            return {"time_slot_override__alt_name__in" : alt_name}
+            alt_names = []
+        
+            for r in repr:
+                alt_names.append(re.search(REG_EX, r)[0])
 
-        return {"time_slot_override__alt_name" : alt_name}
+            return {"time_slot_override__alt_name__in" : alt_names}
+
+        return {"time_slot_override__alt_name" : re.search(REG_EX, repr)[0]}
     
 
 class KindFilter(UtilityFilterBase):

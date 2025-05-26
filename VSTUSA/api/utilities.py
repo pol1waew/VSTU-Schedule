@@ -31,11 +31,11 @@ from api.models import (
 
 
 class Utilities:
-    HEADER_MESSAGE_TEMPLATE = 'В абс. событии <a href="{}">{}</a><br><br>'
+    HEADER_MESSAGE_TEMPLATE = 'В запланированном событии <a href="{}">{}</a><br><br>'
     DUPLICATE_MESSAGE_TEMPLATE = '<a href="{}">{}</a> / {}<br>'
-    PARTICIPANTS_BASE_MESSAGE = 'ПРЕПОДАВАТЕЛИ одновременно участвуют в других абс. событиях:<br>'
+    PARTICIPANTS_BASE_MESSAGE = 'ПРЕПОДАВАТЕЛИ одновременно участвуют в других запланированных событиях:<br>'
     PARTICIPANT_MESSAGE_TEMPLATE = '<a href="{}">{}</a>, '
-    PLACES_BASE_MESSAGE = 'АУДИТОРИИ одновременно задействованы в других абс. событиях:<br>'
+    PLACES_BASE_MESSAGE = 'АУДИТОРИИ одновременно задействованы в других запланированных событиях:<br>'
     PLACE_MESSAGE_TEMPLATE = '<a href="{}">{}</a>, '
 
 

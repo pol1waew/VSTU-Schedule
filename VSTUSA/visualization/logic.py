@@ -5,6 +5,9 @@ from collections import defaultdict
 
 
 def get_table_data(filters):
+    """Returns formated data ready to visualisation
+    """
+    
     reader = ReadAPI()
     
     if filters["date"] == "today":
@@ -50,6 +53,9 @@ def get_table_data(filters):
 
 
 def format_events(events):
+    """Format events by grouping them and ordering by date
+    """
+    
     events = events.order_by("time_slot_override__start_time", "date")
 
     # grouping found events by date
@@ -58,7 +64,7 @@ def format_events(events):
     for e in events:
         grouped_events[e.date].append(e)
 
-    # sorting groups of events by date
+    # ordering groups of events by date
     ordered_grouped_events = []
 
     for e in sorted(grouped_events.items()):
@@ -68,6 +74,11 @@ def format_events(events):
 
 
 def is_same_entries(first_entry, second_entry):
+    """Checks is given entries are the same
+
+    Function compare some fields to make decision
+    """
+    
     return abs(first_entry.time_slot_override.pk - second_entry.time_slot_override.pk) == 1 and \
             first_entry.subject_override == second_entry.subject_override and \
             list(first_entry.get_groups()) == list(second_entry.get_groups()) and \
@@ -76,6 +87,9 @@ def is_same_entries(first_entry, second_entry):
 
 
 def get_row_spans(entries):
+    """Returns a list of table row spans
+    """
+    
     row_spans = []
 
     for entry in entries:
@@ -89,14 +103,7 @@ def get_row_spans(entries):
                 row_spans[len(row_spans) - 1].append(0)
                 prev_event_expanded = False
                 continue
-            
-            """
-            # cant wrap rows with canceled events
-            if entry[i].is_event_canceled == True:
-                row_spans[len(row_spans) - 1].append(1)
-                continue
-            """
-                
+                            
             # skip last row
             if i + 1 >= len(entry):
                 row_spans[len(row_spans) - 1].append(1)
@@ -114,14 +121,17 @@ def get_row_spans(entries):
 def get_month_name(i):
     '''Returns month name from month number
     '''
+    
     MONTH_NAMES = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"]
     
     return MONTH_NAMES[i - 1]
 
 
 def get_calendar(entries):
+    """Makes and returns calendar for given entries
+    """
+    
     calendar = []
-    dates = [1, 2, 3]
 
     for entry in entries:
         # list of monthes to show
@@ -162,8 +172,7 @@ def get_calendar(entries):
     return calendar
 
 def format_days(days : list):
-    '''
-    Transform days order from column (column like month) into row oriented
+    '''Transforms days order from column into row oriented
     '''
     
     max_days_count = 0
@@ -186,6 +195,9 @@ def format_days(days : list):
     return formated_days
 
 def get_POST_value(POST, name):
+    """Returns POST value by represented name
+    """
+    
     value = ""
 
     if name in POST:

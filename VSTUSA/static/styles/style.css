@@ -80,8 +80,15 @@ th {
     padding-bottom: 10px;
 }
 
-td {
-    line-height: 5px;
+.entries-table td:not([name^="c1"]) {
+    padding-top: 12px;
+    padding-bottom: 12px;
+}
+
+.entries-table i {
+    display: inline-block; 
+    font-size: 92%;
+    padding-top: 7px;
 }
 
 .entries-table td:nth-child(1) {

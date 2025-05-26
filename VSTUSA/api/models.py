@@ -276,15 +276,15 @@ class EventParticipant(CommonModel):
 
 class AbstractEventChanges(CommonModel):
     class Meta:
-        verbose_name = "Изменения в абстрактном событии"
-        verbose_name_plural = "Изменения в абстрактных событиях"
+        verbose_name = "Изменения в запланированном событии"
+        verbose_name_plural = "Изменения в запланированных событиях"
 
     group = models.TextField(null=True, default="", verbose_name="Группа")
     date_time = models.TextField(null=True, default="", verbose_name="Дата и учебный час")
     subject = models.TextField(null=True, verbose_name="Занятие")
-    is_created = models.BooleanField(verbose_name="Абстрактное событие создано", default=False)
-    is_deleted = models.BooleanField(verbose_name="Абстрактное событие удалено", default=False)
-    is_exported = models.BooleanField(verbose_name="Абстрактное событие экспортировано", default=False)
+    is_created = models.BooleanField(verbose_name="Запланированное событие создано", default=False)
+    is_deleted = models.BooleanField(verbose_name="Запланированное событие удалено", default=False)
+    is_exported = models.BooleanField(verbose_name="Запланированное событие экспортировано", default=False)
     origin_teachers = models.TextField(null=True, blank=True, default="", verbose_name="Изначальные участники")
     origin_places = models.TextField(null=True, blank=True, default="", verbose_name="Изначальные места")
     origin_holds_on_date = models.TextField(null=True, blank=True, default="", verbose_name="Изначальные заданный день")
@@ -415,11 +415,10 @@ class AbstractEventChanges(CommonModel):
             ae.save()
 
 
-# need manualy fill semester
 class AbstractEvent(CommonModel):
     class Meta:
-        verbose_name = "Абстрактное событие"
-        verbose_name_plural = "Абстрактные события"
+        verbose_name = "Запланированное событие"
+        verbose_name_plural = "Запланированные события"
 
     kind = models.ForeignKey(EventKind, null=True, blank=True, default=None, on_delete=models.PROTECT, verbose_name="Тип")
     subject = models.ForeignKey(Subject, on_delete=models.PROTECT, verbose_name="Предмет")
@@ -726,16 +725,16 @@ class Event(CommonModel):
         verbose_name_plural = "События"
 
     date = models.DateField(null=True, blank=False, verbose_name="Дата")
-    date_override = models.ForeignKey(DayDateOverride, null=True, blank=True, editable=True, on_delete=models.SET_NULL, verbose_name="Перенос дня")
+    date_override = models.ForeignKey(DayDateOverride, null=True, blank=True, editable=False, on_delete=models.SET_NULL, verbose_name="Перенос дня")
     kind_override = models.ForeignKey(EventKind, null=True, blank=True, default=None, on_delete=models.PROTECT, verbose_name="Тип")
     subject_override = models.ForeignKey(Subject, null=True, on_delete=models.PROTECT, verbose_name="Предмет")
     participants_override = models.ManyToManyField(EventParticipant, verbose_name="Участники")
     places_override = models.ManyToManyField(EventPlace, verbose_name="Места")
     time_slot_override = models.ForeignKey(TimeSlot, null=True, on_delete=models.PROTECT, verbose_name="Временной интервал")
-    abstract_event = models.ForeignKey(AbstractEvent, null=True, editable=False, on_delete=models.CASCADE, verbose_name="Абстрактное событие")
+    abstract_event = models.ForeignKey(AbstractEvent, null=True, editable=False, on_delete=models.CASCADE, verbose_name="Запланированное событие")
     is_event_canceled = models.BooleanField(verbose_name="Событие отменено", default=False)
     event_cancel = models.ForeignKey(EventCancel, null=True, blank=True, on_delete=models.SET_NULL, verbose_name="Отмена события")
-    is_event_overriden = models.BooleanField(verbose_name="Событие перезаписано", editable=True, default=False)
+    is_event_overriden = models.BooleanField(verbose_name="Событие изменено вручную", default=False)
 
     @property
     def department(self):
