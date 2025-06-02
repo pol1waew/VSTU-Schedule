@@ -429,7 +429,7 @@ class AbstractEvent(CommonModel):
     # for many dates should create many AbstractEvents
     holds_on_date = models.DateField(null=True, blank=True, verbose_name="Проводится только в заданный день")
     schedule = models.ForeignKey(Schedule, null=True, on_delete=models.CASCADE, related_name="events", verbose_name="Расписание")
-    changes = models.ForeignKey(AbstractEventChanges, null=True, blank=True, on_delete=models.SET_NULL, editable=True, verbose_name="Изменения")
+    changes = models.ForeignKey(AbstractEventChanges, null=True, blank=True, on_delete=models.SET_NULL, editable=False, verbose_name="Изменения")
 
     def __repr__(self):
         return f"Занятие по {self.subject.name}, {self.time_slot.alt_name}ч."
@@ -585,6 +585,11 @@ def on_abstract_event_pre_save(sender, instance, **kwargs):
         return
 
     instance.update_change_model()
+
+    if AbstractEvent.objects.get(pk=instance.pk).abstract_day != instance.abstract_day:
+        from api.utilities import WriteAPI
+
+        WriteAPI.fill_event_table(instance)
 
 @receiver(pre_delete, sender=AbstractEvent)
 def on_abstract_event_delete(sender, instance, **kwargs): 
@@ -824,7 +829,7 @@ def on_event_save(sender, instance, **kwargs):
             if instance.kind_override != instance.abstract_event.kind or \
                 instance.subject_override != instance.abstract_event.subject or \
                 instance.time_slot_override != instance.abstract_event.time_slot or \
-                instance.is_event_canceled:
+                instance.is_event_canceled and not instance.event_cancel:
                 instance.is_event_overriden = True
 
     instance.check_date_interactions()

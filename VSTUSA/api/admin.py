@@ -136,11 +136,14 @@ class EventAdmin(BaseAdmin):
             return queryset
 
     
-    list_display = ("subject_override", "kind_override", "date", "time_slot_override")
-    search_fields = ("subject_override__name", "participants_override__name", "date")
+    list_display = ("subject_override", "date", "abstract_day", "time_slot_override")
+    search_fields = ("participants_override__name", "subject_override__name", "places_override__building", "places_override__room", "kind_override__name", "date")
     list_filter = (EventOverridenFilter, "kind_override", "is_event_canceled")
 
-    readonly_fields = ("is_event_overriden", "dateaccessed", "datemodified", "datecreated")
+    @admin.display(description=AbstractEvent._meta.get_field("abstract_day").verbose_name, 
+                   ordering="name")
+    def abstract_day(self, obj):
+        return obj.abstract_event.abstract_day
 
 
 @admin.register(AbstractEventChanges)
@@ -205,11 +208,11 @@ class AbstractEventChangesAdmin(BaseAdmin):
 
 @admin.register(AbstractEvent)
 class AbstractEventAdmin(BaseAdmin):
-    list_display = ("datemodified", "subject", "kind", "time_slot")
-    search_fields = ("subject__name", "kind__name")
+    list_display = ("datemodified", "subject", "abstract_day", "time_slot")
+    search_fields = ("participants__name", "subject__name", "places__building", "places__room", "kind__name")
     list_filter = ("kind__name",)
 
-    actions = ["delete_events", "fill", "check_fields", "test"]
+    actions = ["delete_events", "fill", "check_fields"]
 
     @admin.action(description="Удалить связанные события")
     def delete_events(modeladmin, request, queryset):
