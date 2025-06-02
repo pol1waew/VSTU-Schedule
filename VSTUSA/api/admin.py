@@ -236,12 +236,19 @@ class AbstractEventAdmin(BaseAdmin):
     def check_fields(modeladmin, request, queryset):
         """Checks for double usage selected AbstractEvents field values
         """
+        
+        is_any_warning_shown = False
 
         for ae in queryset:
             is_double_usage_found, message = Utilities.check_abstract_event(ae)
 
             if is_double_usage_found:
+                is_any_warning_shown = True
+
                 messages.warning(request, message)
+
+        if not is_any_warning_shown:
+            messages.success(request, "В выбранных запланированных событиях накладки не найдены")
 
 
 @admin.register(AbstractDay)
