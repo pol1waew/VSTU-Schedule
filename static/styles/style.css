@@ -1,0 +1,161 @@
+header {
+    background-color: rgb(216, 219, 221);
+    padding: 30px 10px 30px 10px;
+    margin-bottom: 30px;
+    box-shadow: 0px 0px 15px rgb(50, 50, 50);
+}
+
+.main-filters-container {
+    display: flex; 
+    align-items: flex-start; 
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.date-filter-container {
+    display: flex;
+    flex-direction: column;
+    min-width: 15%;
+}
+
+.specified-date-container {
+    margin-top: 5px; 
+    gap: 10px;
+}
+
+header button {
+    padding: 10px 30px;
+}
+
+header input[type="date"] {
+    padding: 3px 7px;
+}
+
+.addition-filters-container {
+    margin-top: 20px;
+    gap: 10px;
+}
+
+.entries-table, .calendar-table {
+    border-collapse: collapse;
+    border-style: none;
+    width: 100%;
+    box-shadow: 0px 0px 15px rgb(50, 50, 50);
+}
+
+.calendar-table {
+    max-height: 170px;
+    min-height: 150px; 
+    width: fit-content;
+}
+
+.calendar-table th, .calendar-table td {
+    color: #1976d2;
+    text-align: center;
+    border-style: none;
+}
+
+.calendar-table th {
+    padding: 7px 3px 7px 3px;
+    font-weight: bold;
+    background-color: rgb(236, 239, 241);
+}
+
+.calendar-table th:nth-child(even) {
+    background-color: rgb(216, 219, 221);
+}
+
+.calendar-table td {
+    background-color: white;
+    transform: scale(1, 1);
+}
+
+.calendar-table td:nth-child(even) {
+    background-color: rgb(236, 239, 241);
+}
+
+.schedule-date-info {
+    display: flex;
+    margin-top: 20px;
+}
+
+.schedule-date-info p {
+    font-size: 18px;
+    color: #1976d2;
+    margin-right: 20px;
+}
+
+.entries-table button {
+    color: #1976d2;
+    font-weight: bold;
+    border-style: none;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.entries-table button:hover {
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.entries-table th, .entries-table td {
+    text-align: center;
+    border-style: none;
+    border-right: solid;
+    border-right-width: 1px;
+    border-right-color: #1976d2;;
+}
+
+.entries-table th {
+    background-color: rgb(216, 219, 221);
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+.entries-table td {
+    color: #1976d2;
+}
+
+.entries-table td:not([name^="c1"]) {
+    padding-top: 12px;
+    padding-bottom: 12px;
+}
+
+.entries-table i {
+    display: inline-block; 
+    font-size: 92%;
+    padding-top: 7px;
+}
+
+.entries-table td:nth-child(1) {
+    width: 10%;
+}
+
+.entries-table td:nth-child(2) {
+    width: 50%;
+}
+
+.entries-table td:nth-child(3) {
+    width: 10%;
+}
+
+.entries-table td:nth-child(4) {
+    width: 20%;
+}
+
+.entries-table td:nth-child(5) {
+    width: 10%;
+    border-right: none;
+}
+
+.canceled-cell {
+    background-color: lightpink !important;
+    text-decoration: line-through;
+}
+
+.entries-table tr {
+    background-color: white;
+}
+
+.entries-table tr:nth-child(even    ) {
+    background-color: rgb(236, 239, 241);
+}

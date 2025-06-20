@@ -1,0 +1,527 @@
+{
+  "subjects": [
+    {
+      "idnumber": "sub0",
+      "name": "Основы разработки Web-приложений"
+    },
+    {
+      "idnumber": "sub1",
+      "name": "Защита информации"
+    },
+    {
+      "idnumber": "sub2",
+      "name": "Основы инженерии знаний"
+    },
+	{
+      "idnumber": "sub3",
+      "name": "Физкультура"
+    },
+	{
+      "idnumber": "sub4",
+      "name": "Проектная деятельность"
+    },
+	{
+      "idnumber": "sub5",
+      "name": "НИР"
+    },
+	{
+      "idnumber": "sub6",
+      "name": "Теория и ФЯиМТ"
+    }
+  ],
+  "event_kinds": [
+    {
+      "idnumber": "kin0",
+      "name": "Лекция"
+    },
+    {
+      "idnumber": "kin1",
+      "name": "Практика"
+    },
+	{
+      "idnumber": "kin2",
+      "name": "Лабораторная работа"
+    }
+  ],
+  "time_slots": [
+    {
+      "idnumber": "tim0",
+      "start_time": "08:30",
+      "end_time": "10:00"
+    },
+	{
+      "idnumber": "tim1",
+      "start_time": "10:10",
+      "end_time": "11:40"
+    },
+	{
+      "idnumber": "tim2",
+      "start_time": "11:50",
+      "end_time": "13:20"
+    },
+	{
+      "idnumber": "tim3",
+      "start_time": "13:40",
+      "end_time": "15:10"
+    },
+	{
+      "idnumber": "tim4",
+      "start_time": "15:20",
+      "end_time": "16:50"
+    },
+	{
+      "idnumber": "tim5",
+      "start_time": "17:00",
+      "end_time": "18:30"
+    }
+  ],
+  "event_places": [
+    {
+      "idnumber": "pla0",
+      "building": "В",
+      "room": "Ауд. 902"
+    },
+    {
+      "idnumber": "pla1",
+      "building": "В",
+      "room": "Ауд. 1302а"
+    },
+	{
+      "idnumber": "pla2",
+      "building": "В",
+      "room": "Ауд. 502"
+    },
+	{
+      "idnumber": "pla3",
+      "building": "В",
+      "room": "УЛК5"
+    },
+	{
+      "idnumber": "pla4",
+      "building": "В",
+      "room": "Ауд. 1201"
+    },
+	{
+      "idnumber": "pla5",
+      "building": "В",
+      "room": "Ауд. 903"
+    }
+  ],
+  "event_participants": [
+    {
+      "idnumber": "par0",
+      "name": "Группа ПрИн-466",
+      "role": "student"
+    },
+    {
+      "idnumber": "par1",
+      "name": "Дмитриев А.С.",
+      "role": "teacher"
+    },
+    {
+      "idnumber": "par2",
+      "name": "Жариков Д.Н.",
+      "role": "teacher"
+    },
+	{
+      "idnumber": "par3",
+      "name": "Шкарупа А.Э.",
+      "role": "teacher"
+    },
+	{
+      "idnumber": "par4",
+      "name": "Сурнина С.В.",
+      "role": "teacher"
+    },{
+      "idnumber": "par5",
+      "name": "Синкевич Д.А.",
+      "role": "teacher"
+    },
+	{
+      "idnumber": "par6",
+      "name": "Набока М.В.",
+      "role": "teacher"
+    },
+	{
+      "idnumber": "par7",
+      "name": "Быков Д.В.",
+      "role": "teacher"
+    },
+	{
+      "idnumber": "par8",
+      "name": "Гилка В.В.",
+      "role": "teacher"
+    },
+	{
+      "idnumber": "par9",
+      "name": "Сычёв О.А.",
+      "role": "teacher"
+    }
+  ],
+  "schedules": [
+    {
+      "idnumber": "sch0",
+      "faculty": "ФЭВТ",
+      "scope": "bachelor",
+      "course": 4,
+      "semester": 7,
+      "years": "2024-2025"
+    }
+  ],
+  "events": [
+    {
+      "idnumber": "eve0",
+      "subject_id": "sub0",
+      "kind_id": "kin2",
+      "schedule_id": "sch0",
+      "participants": [
+        "par0",
+        "par1"
+      ],
+      "holding_info": [
+        {
+          "idnumber": "hol0",
+          "place_id": "pla0",
+          "date": "2024-10-21",
+          "slot_id": "tim4"
+        },
+		{
+          "idnumber": "hol1",
+          "place_id": "pla0",
+          "date": "2024-10-21",
+          "slot_id": "tim5"
+        }
+      ]
+    },
+	{
+      "idnumber": "eve1",
+      "subject_id": "sub1",
+      "kind_id": "kin2",
+      "schedule_id": "sch0",
+      "participants": [
+        "par0",
+        "par2"
+      ],
+      "holding_info": [
+        {
+          "idnumber": "hol2",
+          "place_id": "pla1",
+          "date": "2024-10-22",
+          "slot_id": "tim2"
+        },
+		{
+          "idnumber": "hol3",
+          "place_id": "pla1",
+          "date": "2024-10-22",
+          "slot_id": "tim3"
+        }
+      ]
+    },
+	{
+	  "idnumber": "eve2",
+      "subject_id": "sub2",
+      "kind_id": "kin0",
+      "schedule_id": "sch0",
+      "participants": [
+        "par0",
+        "par3"
+      ],
+      "holding_info": [
+        {
+          "idnumber": "hol4",
+          "place_id": "pla2",
+          "date": "2024-10-23",
+          "slot_id": "tim2"
+        },
+		{
+          "idnumber": "hol5",
+          "place_id": "pla2",
+          "date": "2024-10-23",
+          "slot_id": "tim3"
+        }
+      ]
+    },
+	{
+	  "idnumber": "eve3",
+      "subject_id": "sub3",
+      "kind_id": "kin1",
+      "schedule_id": "sch0",
+      "participants": [
+        "par0",
+        "par4"
+      ],
+      "holding_info": [
+        {
+          "idnumber": "hol6",
+          "place_id": "pla3",
+          "date": "2024-10-23",
+          "slot_id": "tim4"
+        }
+      ]
+    },
+	{
+	  "idnumber": "eve4",
+      "subject_id": "sub2",
+      "kind_id": "kin2",
+      "schedule_id": "sch0",
+      "participants": [
+        "par0",
+        "par3"
+      ],
+      "holding_info": [
+        {
+          "idnumber": "hol7",
+          "place_id": "pla0",
+          "date": "2024-10-24",
+          "slot_id": "tim4"
+        },
+		{
+          "idnumber": "hol8",
+          "place_id": "pla0",
+          "date": "2024-10-24",
+          "slot_id": "tim5"
+        }
+      ]
+    },
+	{
+	  "idnumber": "eve5",
+      "subject_id": "sub4",
+      "kind_id": "kin2",
+      "schedule_id": "sch0",
+      "participants": [
+        "par0",
+        "par6"
+      ],
+      "holding_info": [
+        {
+          "idnumber": "hol9",
+          "place_id": "pla0",
+          "date": "2024-10-26",
+          "slot_id": "tim0"
+        },
+		{
+          "idnumber": "hol10",
+          "place_id": "pla0",
+          "date": "2024-10-26",
+          "slot_id": "tim1"
+        }
+      ]
+    },
+	{
+	  "idnumber": "eve6",
+      "subject_id": "sub0",
+      "kind_id": "kin0",
+      "schedule_id": "sch0",
+      "participants": [
+        "par0",
+        "par1"
+      ],
+      "holding_info": [
+        {
+          "idnumber": "hol11",
+          "place_id": "pla4",
+          "date": "2024-10-28",
+          "slot_id": "tim2"
+        },
+		{
+          "idnumber": "hol12",
+          "place_id": "pla4",
+          "date": "2024-10-28",
+          "slot_id": "tim3"
+        }
+      ]
+    },
+	{
+	  "idnumber": "eve7",
+      "subject_id": "sub3",
+      "kind_id": "kin1",
+      "schedule_id": "sch0",
+      "participants": [
+        "par0",
+        "par4"
+      ],
+      "holding_info": [
+		{
+          "idnumber": "hol13",
+          "place_id": "pla3",
+          "date": "2024-10-28",
+          "slot_id": "tim4"
+        }
+      ]
+    },
+	{
+	  "idnumber": "eve8",
+      "subject_id": "sub1",
+      "kind_id": "kin0",
+      "schedule_id": "sch0",
+      "participants": [
+        "par0",
+        "par7"
+      ],
+      "holding_info": [
+        {
+          "idnumber": "hol14",
+          "place_id": "pla2",
+          "date": "2024-10-29",
+          "slot_id": "tim2"
+        },
+		{
+          "idnumber": "hol15",
+          "place_id": "pla2",
+          "date": "2024-10-29",
+          "slot_id": "tim3"
+        }
+      ]
+    },
+	{
+	  "idnumber": "eve9",
+      "subject_id": "sub5",
+      "kind_id": "kin2",
+      "schedule_id": "sch0",
+      "participants": [
+        "par0",
+        "par8"
+      ],
+      "holding_info": [
+        {
+          "idnumber": "hol16",
+          "place_id": "pla0",
+          "date": "2024-10-29",
+          "slot_id": "tim4"
+        },
+		{
+          "idnumber": "hol17",
+          "place_id": "pla0",
+          "date": "2024-10-29",
+          "slot_id": "tim5"
+        }
+      ]
+    },
+	{
+	  "idnumber": "eve10",
+      "subject_id": "sub6",
+      "kind_id": "kin2",
+      "schedule_id": "sch0",
+      "participants": [
+        "par0",
+        "par9"
+      ],
+      "holding_info": [
+        {
+          "idnumber": "hol18",
+          "place_id": "pla5",
+          "date": "2024-10-30",
+          "slot_id": "tim2"
+        },
+		{
+          "idnumber": "hol19",
+          "place_id": "pla5",
+          "date": "2024-10-30",
+          "slot_id": "tim3"
+        }
+      ]
+    },
+	{
+	  "idnumber": "eve11",
+      "subject_id": "sub6",
+      "kind_id": "kin0",
+      "schedule_id": "sch0",
+      "participants": [
+        "par0",
+        "par9"
+      ],
+      "holding_info": [
+		{
+          "idnumber": "hol20",
+          "place_id": "pla2",
+          "date": "2024-10-31",
+          "slot_id": "tim3"
+        }
+      ]
+    },
+	{
+	  "idnumber": "eve12",
+      "subject_id": "sub3",
+      "kind_id": "kin1",
+      "schedule_id": "sch0",
+      "participants": [
+        "par0",
+        "par4"
+      ],
+      "holding_info": [
+		{
+          "idnumber": "hol21",
+          "place_id": "pla3",
+          "date": "2024-10-31",
+          "slot_id": "tim4"
+        }
+      ]
+    },
+	{
+	  "idnumber": "eve13",
+      "subject_id": "sub6",
+      "kind_id": "kin1",
+      "schedule_id": "sch0",
+      "participants": [
+        "par0",
+        "par9"
+      ],
+      "holding_info": [
+		{
+          "idnumber": "hol22",
+          "place_id": "pla5",
+          "date": "2024-10-31",
+          "slot_id": "tim5"
+        }
+      ]
+    },
+	{
+	  "idnumber": "eve14",
+      "subject_id": "sub0",
+      "kind_id": "kin1",
+      "schedule_id": "sch0",
+      "participants": [
+        "par0",
+        "par1"
+      ],
+      "holding_info": [
+		{
+          "idnumber": "hol23",
+          "place_id": "pla0",
+          "date": "2024-11-1",
+          "slot_id": "tim0"
+        },
+		{
+          "idnumber": "hol24",
+          "place_id": "pla0",
+          "date": "2024-11-1",
+          "slot_id": "tim1"
+        }
+      ]
+    },
+	{
+	  "idnumber": "eve15",
+      "subject_id": "sub4",
+      "kind_id": "kin1",
+      "schedule_id": "sch0",
+      "participants": [
+        "par0",
+        "par6"
+      ],
+      "holding_info": [
+		{
+          "idnumber": "hol25",
+          "place_id": "pla5",
+          "date": "2024-11-2",
+          "slot_id": "tim0"
+        },
+		{
+          "idnumber": "hol26",
+          "place_id": "pla5",
+          "date": "2024-11-2",
+          "slot_id": "tim1"
+        }
+      ]
+    }
+  ]
+}
