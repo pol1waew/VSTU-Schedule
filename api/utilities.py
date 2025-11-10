@@ -8,6 +8,8 @@ import api.utility_filters as filters
 from itertools import islice
 import xlsxwriter
 import io
+import json
+import re
 from api.models import (
     CommonModel,
     AbstractEvent,
@@ -123,6 +125,134 @@ class Utilities:
         return True, return_message
 
 
+class ImportAPI:
+    @classmethod
+    def import_data(cls, data_file_path : str):
+        try:
+            with open(data_file_path, mode="r", encoding="utf8") as data_file:
+                data = json.load(data_file)
+            
+        except FileNotFoundError or FileExistsError:
+            return 1
+        
+        parsed_weeks = cls.parse_weeks(data["table"]["datetime"]["weeks"], data["table"]["datetime"]["months"])
+        
+        cls.parse_data(data["title"], data["table"]["grid"], data["table"]["datetime"]["week_days"])
+
+        return 0
+        
+    @staticmethod
+    def parse_weeks(weeks, months : list[str]) -> dict:
+        """
+        
+        parsed_weeks = { 
+            week_id : { 
+                week_day_name : {
+                    month_name : [ month_days ]
+                }
+            } 
+        }
+
+        Example:
+
+        parsed_weeks = { 
+            "first_week" : { 
+                "Понедельник" : {
+                    "Февраль" : [ 1, 15 ],
+                    "Март" : [ 1, 15 ]
+                }
+                "Вторник" : {
+                    "Февраль" : [ 2, 16 ],
+                    "Март" : [ 2, 16 ]
+                }
+            },
+            "second_week" : { 
+                "Понедельник" : {
+                    "Февраль" : [ 8, 22 ],
+                    "Март" : [ 8, 22 ]
+                }
+                "Вторник" : {
+                    "Февраль" : [ 9, 23 ],
+                    "Март" : [ 9, 23 ]
+                }
+            } 
+        }
+        """
+
+        parsed_weeks = { "first_week" : {}, "second_week" : {} }
+
+        ## TODO: move code into method
+        for week_day in weeks["first_week"]:
+            parsed_weeks["first_week"][week_day["week_day_index"]] = {}
+
+            for month in week_day["calendar"]:
+                parsed_weeks["first_week"][week_day["week_day_index"]][months[month["month_index"]]] = month["month_days"]
+
+        for week_day in weeks["second_week"]:
+            parsed_weeks["second_week"][week_day["week_day_index"]] = {}
+
+            for month in week_day["calendar"]:
+                parsed_weeks["second_week"][week_day["week_day_index"]][months[month["month_index"]]] = month["month_days"]
+    
+    @classmethod
+    def parse_data(cls, title : str, entries, week_days : list[str]):
+        schedule = cls.get_schedule(title)
+
+        for entry in entries:
+            abstract_day_name = "{week_number} неделя, {week_day}".format(
+                week_number=1 if entry["week"] == "first_week" else 2,
+                week_day=week_days[entry["week_day_index"]].capitalize()
+            )
+
+            kind = EventKind.objects.get(name=entry["kind"].capitalize())
+            subject = Subject.objects.get(name=entry["subject"])
+            participants = EventParticipant.objects.filter(name__in=entry["participants"]["teachers"] + entry["participants"]["student_groups"]).all()
+            places = EventPlace.objects.filter(**filters.PlaceFilter.by_repr(entry["places"])).all()
+            abstract_day = AbstractDay.objects.get(name=abstract_day_name)
+            time_slots = TimeSlot.objects.filter(**filters.TimeSlotFilter.by_repr(entry["hours"]))
+            holds_on_dates = []
+            if entry["holds_on_date"]:
+                for date_ in entry["holds_on_date"]:
+                    holds_on_dates.append(datetime.strptime(date_, "%d.%M.%Y").date())
+
+
+            
+            WriteAPI.create_abstract_event(kind, 
+                                            subject,
+                                            participants,
+                                        places,
+                                        abstract_day,
+                                        time_slots[0],
+                                            None,
+                                            schedule)
+
+    @staticmethod
+    def get_schedule(title : str) -> Schedule:
+        COURSE_REG_EX = r"(\d) курса"
+        FACULTY_REG_EX = r"курса ([А-Я]+)"
+        SEMESTER_REG_EX = r"(\d) семестр"
+        FULL_YEARS_REG_EX = r"(\d{4}-\d{4}) учебного"
+
+        course = re.search(COURSE_REG_EX, title).group(1)
+        faculty = re.search(FACULTY_REG_EX, title).group(1)
+        semester = re.search(SEMESTER_REG_EX, title).group(1)
+        years = re.search(FULL_YEARS_REG_EX, title).group(1)
+
+        return Schedule.objects.get(**filters.ScheduleFilter.by_base_parameters(
+            course,
+            faculty,
+            semester,
+            years
+        ))
+
+    @staticmethod
+    def use_data():
+        pass
+        
+
+        
+
+
 class ReadAPI:
     filter_query : dict
     found_models : QuerySet
@@ -193,7 +323,7 @@ class ReadAPI:
 class WriteAPI:
     @staticmethod
     def create_event(date_ : str|date, abstract_event : AbstractEvent):
-        """Create new Event from abstract_event on specified date
+        """Creates new Event from abstract_event on specified date
         """
 
         if isinstance(date_, str):
@@ -212,6 +342,41 @@ class WriteAPI:
 
         event.participants_override.add(*abstract_event.participants.all())
         event.places_override.add(*abstract_event.places.all())
+
+    @staticmethod
+    def create_abstract_event(kind : EventKind, 
+                              subject : Subject,
+                              participants : list[EventParticipant],
+                              places : list[EventPlace],
+                              abstract_day : AbstractDay,
+                              time_slot : TimeSlot,
+                              holds_on_date : date|None,
+                              schedule : Schedule) -> AbstractEvent:
+        """Creates new Abstract Event
+
+        Returns created Abstract Event
+
+        Returns:
+            abstract_event
+        """
+
+        abstract_event = AbstractEvent()
+
+        abstract_event.kind = kind
+        abstract_event.subject = subject
+        abstract_event.abstract_day = abstract_day
+        abstract_event.time_slot = time_slot
+        if holds_on_date:
+            abstract_event.holds_on_date = holds_on_date
+        abstract_event.schedule = schedule
+
+        abstract_event.save()
+
+        abstract_event.participants.add(*participants)
+        abstract_event.places.add(*places)
+
+        return abstract_event
+        
 
     @staticmethod
     def get_semester_filling_parameters(abstract_event : AbstractEvent):

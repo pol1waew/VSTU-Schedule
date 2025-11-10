@@ -89,8 +89,21 @@ class ParticipantFilter(UtilityFilterBase):
     
 
 class PlaceFilter(UtilityFilterBase):
-    """Only for work with Event model fields
-    """
+    @classmethod
+    def by_repr_event_relative(cls, repr : str|list[str]):
+        """Only for work with Event model fields
+
+        Use list of places repr for OR behaviour
+
+        repr must be in format: "{building} {room}" (separated by space)
+        """
+
+        filter_ = cls.by_repr(repr)
+
+        for key in filter_.keys():
+            filter_["places_override__{}".format(key)] = filter_.pop(key)
+
+        return filter_
 
     @classmethod
     def by_repr(cls, repr : str|list[str]):
@@ -128,9 +141,9 @@ class PlaceFilter(UtilityFilterBase):
         """
 
         if type(building) is list:
-            return {"places_override__building__in" : building}
+            return {"building__in" : building}
 
-        return {"places_override__building" : building}
+        return {"building" : building}
 
     @staticmethod
     def by_room(room : str|list[str]):
@@ -140,9 +153,9 @@ class PlaceFilter(UtilityFilterBase):
         """
         
         if type(room) is list:
-            return {"places_override__room__in" : room}
+            return {"room__in" : room}
 
-        return {"places_override__room" : room}
+        return {"room" : room}
     
 
 class SubjectFilter(UtilityFilterBase):
@@ -163,8 +176,19 @@ class SubjectFilter(UtilityFilterBase):
     
 
 class TimeSlotFilter(UtilityFilterBase):
-    """Only for work with Event model fields
-    """
+    @classmethod
+    def by_repr_event_relative(cls, repr : str|list[str]):
+        """Only for work with Event model fields
+
+        Use list of time slots repr for OR behaviour
+        """
+
+        filter_ = cls.by_repr(repr)
+
+        for key in filter_.keys():
+            filter_["time_slot_override__{}".format(key)] = filter_.pop(key)
+
+        return filter_
 
     @staticmethod
     def by_repr(repr : str|list[str]):
@@ -181,9 +205,9 @@ class TimeSlotFilter(UtilityFilterBase):
             for r in repr:
                 alt_names.append(re.search(REG_EX, r)[0])
 
-            return {"time_slot_override__alt_name__in" : alt_names}
+            return {"alt_name__in" : alt_names}
 
-        return {"time_slot_override__alt_name" : re.search(REG_EX, repr)[0]}
+        return {"alt_name" : re.search(REG_EX, repr)[0]}
     
 
 class KindFilter(UtilityFilterBase):
@@ -231,4 +255,22 @@ class AbstractEventFilter(UtilityFilterBase):
     @staticmethod
     def with_existing_events():
         return {"pk__in" : Event.objects.values_list("abstract_event__pk", flat=True).distinct()}
+
+class ScheduleFilter(UtilityFilterBase):
+    """Only for work with Schedule model fields
+    """
     
+    @staticmethod
+    def by_base_parameters(course : int, 
+                           faculty : str,
+                           semester : int,
+                           years : str):
+        """
+
+        Years must be presented in format: YYYY-YYYY (START_YEAR-END_YEAR)
+        """
+        
+        return {"metadata__course" : course,
+                "schedule_template__metadata__faculty" : faculty,
+                "metadata__semester" : semester,
+                "metadata__years" : years}

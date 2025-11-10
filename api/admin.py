@@ -1,4 +1,4 @@
-from api.utilities import Utilities, ReadAPI, WriteAPI
+from api.utilities import Utilities, ReadAPI, WriteAPI, ImportAPI
 import api.utility_filters as filters
 from django.contrib import admin, messages
 from django.contrib.admin.actions import delete_selected
@@ -212,7 +212,14 @@ class AbstractEventAdmin(BaseAdmin):
     search_fields = ("participants__name", "subject__name", "places__building", "places__room", "kind__name")
     list_filter = ("kind__name",)
 
-    actions = ["delete_events", "fill", "check_fields"]
+    actions = ["test_import_data", "delete_events", "fill", "check_fields"]
+
+    @admin.action(description="(ТЕСТ)Импортировать расписание из файла")
+    def test_import_data(modeladmin, request, queryset):
+        if not ImportAPI.import_data("testdata/import_v2.json"):
+            messages.success(request, "Импорт успешно произведён")
+        else:
+            messages.error(request, "Файл не найден или не существует")
 
     @admin.action(description="Удалить связанные события")
     def delete_events(modeladmin, request, queryset):

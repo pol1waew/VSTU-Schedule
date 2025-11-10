@@ -27,7 +27,7 @@ def get_table_data(filters):
         reader.add_filter(ParticipantFilter.by_name(filters["group"]))
 
     if filters["place"]:
-        reader.add_filter(PlaceFilter.by_repr(filters["place"]))
+        reader.add_filter(PlaceFilter.by_repr_event_relative(filters["place"]))
 
     if filters["subject"]:
         reader.add_filter(SubjectFilter.by_name(filters["subject"]))
@@ -36,7 +36,7 @@ def get_table_data(filters):
         reader.add_filter(KindFilter.by_name(filters["kind"]))
 
     if filters["time_slot"]:
-        reader.add_filter(TimeSlotFilter.by_repr(filters["time_slot"]))
+        reader.add_filter(TimeSlotFilter.by_repr_event_relative(filters["time_slot"]))
 
     reader.find_models(Event)
 
