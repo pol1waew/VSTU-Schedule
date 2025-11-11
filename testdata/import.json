@@ -1,0 +1,174 @@
+{
+	"title": "Учебные занятия 4 курса ФЭВТ на 2 семестр 2024-2025 учебного года",
+	"table": {
+		"grid": [
+			{
+				"subject": "ВКР",
+				"kind": "лекция",
+				"participants": {
+					"teachers": [
+						"Гилка В.В.",
+						"Кузнецова А.С."
+					],
+					"student_groups": [
+						"ИВТ-460"
+					]
+				},
+				"places": [
+					"В 902а",
+					"В 902б"
+				],
+				"hours": [
+					"1-2",
+					"3-4"
+				],
+				"week_day_index": 0,
+				"week": "first_week",
+				"holds_on_date": [
+					"09.11.2024"
+				]
+			},
+			{
+				"subject": "МИКРОПРОЦЕССОРЫ",
+				"kind": "лабораторная работа",
+				"participants": {
+					"teachers": [
+						"Синкевич Д.",
+						"Дмитриев А.С."
+					],
+					"student_groups": [
+						"ПрИн-466",
+						"ПрИн-467"
+					]
+				},
+				"places": [
+					"В 903",
+					"В 908"
+				],
+				"hours": [
+					"5-6",
+					"7-8"
+				],
+				"week_day_index": 1,
+				"week": "second_week",
+				"holds_on_date": []
+			},
+			{
+				"subject": "ИНФОРМ. КУЛЬТУРА",
+				"kind": "практика",
+				"participants": {
+					"teachers": [
+						"Гилка В.В.",
+						"Дмитриев А.С."
+					],
+					"student_groups": [
+						"ИВТ-460",
+						"ПрИн-467"
+					]
+				},
+				"places": [
+					"В 902б",
+					"В 908"
+				],
+				"hours": [
+					"9-10"
+				],
+				"week_day_index": 2,
+				"week": "second_week",
+				"holds_on_date": []
+			}
+		],
+		"datetime": {
+			"weeks": {
+				"first_week": [
+					{
+						"week_day_index": 0,
+						"calendar": [
+							{
+								"month_index": 0,
+								"month_days": [
+									"1", 
+									"15"
+								]
+							},
+							{
+								"month_index": 1,
+								"month_days": [
+									"20", 
+									"28"
+								]
+							}
+						]
+					},
+					{
+						"week_day_index": 1,
+						"calendar": [
+							{
+								"month_index": 0,
+								"month_days": [
+									"2", 
+									"16"
+								]
+							}
+						]
+					}
+				],
+				"second_week": [
+					{
+						"week_day_index": 0,
+						"calendar": [
+							{
+								"month_index": 0,
+								"month_days": [
+									"8", 
+									"22"
+								]
+							}
+						]
+					},
+					{
+						"week_day_index": 1,
+						"calendar": [
+							{
+								"month_index": 0,
+								"month_days": [
+									"9", 
+									"23"
+								]
+							}
+						]
+					},
+					{
+						"week_day_index": 2,
+						"calendar": [
+							{
+								"month_index": 5,
+								"month_days": [
+									"11", 
+									"25",
+									"26"
+								]
+							}
+						]
+					}
+				]
+			},
+			"week_days": [
+				"ПОНЕДЕЛЬНИК",
+				"ВТОРНИК",
+				"СРЕДА",
+				"ЧЕТВЕРГ",
+				"ПЯТНИЦА",
+				"СУББОТА"
+			],
+			"months": [
+				"февраль",
+				"март",
+				"апрель",
+				"май",
+				"июнь",
+				"сентябрь"
+			]
+		}
+	}
+}

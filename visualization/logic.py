@@ -118,9 +118,9 @@ def get_row_spans(entries):
     return row_spans
 
 
-def get_month_name(i):
-    '''Returns month name from month number
-    '''
+def get_month_name(i : int):
+    """Returns month name from month number
+    """
     
     MONTH_NAMES = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"]
     

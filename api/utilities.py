@@ -127,7 +127,10 @@ class Utilities:
 
 class ImportAPI:
     @classmethod
-    def import_data(cls, data_file_path : str):
+    def import_data(cls, data_file_path : str) -> int:
+        """Reads data from given file and fill database with new Events
+        """
+        
         try:
             with open(data_file_path, mode="r", encoding="utf8") as data_file:
                 data = json.load(data_file)
@@ -135,21 +138,37 @@ class ImportAPI:
         except FileNotFoundError or FileExistsError:
             return 1
         
-        parsed_weeks = cls.parse_weeks(data["table"]["datetime"]["weeks"], data["table"]["datetime"]["months"])
-        
-        cls.parse_data(data["title"], data["table"]["grid"], data["table"]["datetime"]["week_days"])
+        cls.make_import(
+            data["title"],
+            data["table"]["grid"],
+            data["table"]["datetime"]["weeks"],
+            data["table"]["datetime"]["week_days"],
+            data["table"]["datetime"]["months"]
+        )
 
         return 0
+    
+    @classmethod
+    def make_import(cls, title : str, entries, weeks, week_days : list[str], months : list[str]):
+        """Applies data from loaded JSON on database
+        """
         
-    @staticmethod
-    def parse_weeks(weeks, months : list[str]) -> dict:
+        schedule = cls.get_schedule(title)
+        global_calendar = cls.make_calendar(weeks, months, schedule)
+
+        for entry in entries:
+            cls.use_parsed_data(*cls.parse_data(entry, global_calendar, week_days), schedule)
+        
+    @classmethod
+    def make_calendar(cls, weeks, months : list[str], schedule : Schedule) -> dict:
         """
         
         parsed_weeks = { 
             week_id : { 
-                week_day_name : {
-                    month_name : [ month_days ]
-                }
+                week_day_index : [
+                    dd.mm.YYYY,
+                    dd.mm.YYYY...
+                ]
             } 
         }
 
@@ -157,77 +176,150 @@ class ImportAPI:
 
         parsed_weeks = { 
             "first_week" : { 
-                "Понедельник" : {
-                    "Февраль" : [ 1, 15 ],
-                    "Март" : [ 1, 15 ]
-                }
-                "Вторник" : {
-                    "Февраль" : [ 2, 16 ],
-                    "Март" : [ 2, 16 ]
-                }
+                0 : [
+                    1.02.2025,
+                    15.02.2025
+                ],
+                1 : [
+                    2.02.2025,
+                    16.02.2025
+                ]
             },
             "second_week" : { 
-                "Понедельник" : {
-                    "Февраль" : [ 8, 22 ],
-                    "Март" : [ 8, 22 ]
-                }
-                "Вторник" : {
-                    "Февраль" : [ 9, 23 ],
-                    "Март" : [ 9, 23 ]
-                }
+                0 : [
+                    8.02.2025,
+                    22.02.2025
+                ],
+                1 : [
+                    9.02.2025,
+                    23.02.2025
+                ]
             } 
         }
         """
 
-        parsed_weeks = { "first_week" : {}, "second_week" : {} }
+        calendar = {}
+        left_year, right_year = schedule.metadata.years.split("-", 1)
 
-        ## TODO: move code into method
-        for week_day in weeks["first_week"]:
-            parsed_weeks["first_week"][week_day["week_day_index"]] = {}
+        for week_id in weeks.keys():
+            calendar[week_id] = {}
 
-            for month in week_day["calendar"]:
-                parsed_weeks["first_week"][week_day["week_day_index"]][months[month["month_index"]]] = month["month_days"]
+            for week_day in weeks[week_id]:
+                calendar[week_id][week_day["week_day_index"]] = []
 
-        for week_day in weeks["second_week"]:
-            parsed_weeks["second_week"][week_day["week_day_index"]] = {}
+                for month in week_day["calendar"]:
+                    month_number = cls.get_month_number(months[month["month_index"]])
 
-            for month in week_day["calendar"]:
-                parsed_weeks["second_week"][week_day["week_day_index"]][months[month["month_index"]]] = month["month_days"]
+                    for month_day in month["month_days"]:
+                        calendar[week_id][week_day["week_day_index"]].append(
+                            datetime.strptime(
+                                "{}.{}.{}".format(month_day, month_number, left_year if month_number > 6 else right_year), 
+                                "%d.%m.%Y"
+                            ).date()
+                        )
+
+        return calendar
     
+    @staticmethod
+    def get_month_number(name : str):
+        """Returns month number from month name
+        """
+        
+        MONTHS = { 
+            "январь" : 1, 
+            "февраль" : 2, 
+            "март" : 3, 
+            "апрель" : 4, 
+            "май" : 5, 
+            "июнь" : 6, 
+            "июль" : 7, 
+            "август" : 8, 
+            "сентябрь" : 9, 
+            "октябрь" : 10, 
+            "ноябрь": 11, 
+            "декабрь" : 12
+        }
+        
+        return MONTHS[name.lower()]
+
     @classmethod
-    def parse_data(cls, title : str, entries, week_days : list[str]):
-        schedule = cls.get_schedule(title)
+    def parse_data(cls, entry, global_calendar, week_days : list[str]):
+        """Finds existing models for JSON data
 
-        for entry in entries:
-            abstract_day_name = "{week_number} неделя, {week_day}".format(
-                week_number=1 if entry["week"] == "first_week" else 2,
-                week_day=week_days[entry["week_day_index"]].capitalize()
-            )
+        Method does not create new models except AbstractEvent and its Events!
 
-            kind = EventKind.objects.get(name=entry["kind"].capitalize())
-            subject = Subject.objects.get(name=entry["subject"])
-            participants = EventParticipant.objects.filter(name__in=entry["participants"]["teachers"] + entry["participants"]["student_groups"]).all()
-            places = EventPlace.objects.filter(**filters.PlaceFilter.by_repr(entry["places"])).all()
-            abstract_day = AbstractDay.objects.get(name=abstract_day_name)
-            time_slots = TimeSlot.objects.filter(**filters.TimeSlotFilter.by_repr(entry["hours"]))
+        All data found in JSON, such as EventKind, Subject or EventParticipants, 
+        must already exists in database as models
+        """
+
+        event_participant_names = entry["participants"]["teachers"] + entry["participants"]["student_groups"]
+
+        week_id = entry["week"]
+        week_day_index = entry["week_day_index"]
+
+        kind = EventKind.objects.get(name=entry["kind"].capitalize())
+        subject = Subject.objects.get(name=entry["subject"])
+        participants = EventParticipant.objects.filter(name__in=event_participant_names).all()
+        places = EventPlace.objects.filter(**filters.PlaceFilter.by_repr(entry["places"])).all()
+        abstract_day = AbstractDay.objects.get(
+            name__startswith=1 if week_id == "first_week" else 2,
+            name__endswith=week_days[week_day_index].capitalize()
+        )
+        time_slots = TimeSlot.objects.filter(**filters.TimeSlotFilter.by_repr(entry["hours"]))
+        if entry["holds_on_date"]:
             holds_on_dates = []
-            if entry["holds_on_date"]:
-                for date_ in entry["holds_on_date"]:
-                    holds_on_dates.append(datetime.strptime(date_, "%d.%M.%Y").date())
 
+            for date_ in entry["holds_on_date"]:
+                holds_on_dates.append(datetime.strptime(date_, "%d.%m.%Y").date())
+        else:
+            holds_on_dates = [ None ]
 
-            
-            WriteAPI.create_abstract_event(kind, 
-                                            subject,
-                                            participants,
-                                        places,
-                                        abstract_day,
-                                        time_slots[0],
-                                            None,
-                                            schedule)
+        calendar = global_calendar[week_id][week_day_index]
+
+        return kind, subject, participants, places, abstract_day, time_slots, holds_on_dates, calendar
+  
+    @staticmethod
+    def use_parsed_data(kind : EventKind, 
+                        subject : Subject,
+                        participants : list[EventParticipant],
+                        places : list[EventPlace],
+                        abstract_day : AbstractDay,
+                        time_slots : list[TimeSlot],
+                        holds_on_dates : list[date]|list[None],
+                        calendar : dict,
+                        schedule : Schedule):
+        """Creates AbstractEvents and Events for given TimeSlots and dates (if needed)
+        """
+
+        for date_ in holds_on_dates:
+            for time_slot in time_slots:
+                created_abstract_event = WriteAPI.create_abstract_event(
+                    kind,
+                    subject,
+                    participants,
+                    places,
+                    abstract_day,
+                    time_slot,
+                    date_,
+                    schedule
+                )
+
+                WriteAPI.fill_semester_by_dates(created_abstract_event, calendar)
+        
 
     @staticmethod
     def get_schedule(title : str) -> Schedule:
+        """Parse timetable title and find Schedule based on this title
+
+        Schedule must already exist. 
+        Title must contain course, faculty, semester and years information
+
+        Returns found Schedule
+
+        Returns:
+            schedule
+        """
+        
         COURSE_REG_EX = r"(\d) курса"
         FACULTY_REG_EX = r"курса ([А-Я]+)"
         SEMESTER_REG_EX = r"(\d) семестр"
@@ -244,13 +336,6 @@ class ImportAPI:
             semester,
             years
         ))
-
-    @staticmethod
-    def use_data():
-        pass
-        
-
-        
 
 
 class ReadAPI:
@@ -377,7 +462,6 @@ class WriteAPI:
 
         return abstract_event
         
-
     @staticmethod
     def get_semester_filling_parameters(abstract_event : AbstractEvent):
         """Intended for internal usage
@@ -415,8 +499,9 @@ class WriteAPI:
                 abstract_event.schedule.schedule_template.repetition_period
 
     @classmethod
-    def fill_semester(cls, abstract_event : AbstractEvent):
+    def fill_semester_by_repeating(cls, abstract_event : AbstractEvent):
         """Creates Events from given AbstractEvent for every semester working day
+        using Schedule parameters
         """
 
         # creates single Event 
@@ -424,29 +509,50 @@ class WriteAPI:
         if abstract_event.holds_on_date != None:
             cls.create_event(abstract_event.holds_on_date, abstract_event)
         else:
-            semester_start_date, semester_end_date, date, repetition_period = cls.get_semester_filling_parameters(abstract_event)
+            semester_start_date, semester_end_date, date_, repetition_period = cls.get_semester_filling_parameters(abstract_event)
 
-            while date < semester_end_date:
-                if date >= semester_start_date:
-                    cls.create_event(date, abstract_event)
+            while date_ < semester_end_date:
+                if date_ >= semester_start_date:
+                    cls.create_event(date_, abstract_event)
                 
                     # creating Event for only first acceptable date
                     # if abstract_event is not repeatable
                     if not abstract_event.schedule.schedule_template.repeatable:
                         break
                 
-                date += timedelta(days=repetition_period)
+                date_ += timedelta(days=repetition_period)
+        
+        cls.check_for_day_date_override(abstract_event)
 
+    @classmethod
+    def fill_semester_by_dates(cls, abstract_event : AbstractEvent, dates : list[date]):
+        """Creates Events from given AbstractEvent for every given date
+
+        Always creates Events even if it goes out of bounds the semester
+        """
+
+        # creates single Event 
+        # if abstract_event holds only on expected date
+        if abstract_event.holds_on_date != None:
+            cls.create_event(abstract_event.holds_on_date, abstract_event)
+        else:
+            for date_ in dates:
+                cls.create_event(date_, abstract_event)
+        
+        cls.check_for_day_date_override(abstract_event)
+
+    @classmethod
+    def check_for_day_date_override(cls, abstract_event : AbstractEvent):
         reader = ReadAPI({"department" : abstract_event.department})
 
-        # getting all DayDateOverrides for abstract event
+        # getting all DayDateOverrides for AbstractEvent
         reader.find_models(DayDateOverride)
         date_overrides = reader.get_found_models()
 
         reader.clear_filter_query()
         reader.add_filter({"abstract_event" : abstract_event})
 
-        # applying date overrides to created events
+        # applying date overrides to Events
         for ddo in date_overrides:
             reader.add_filter(filters.DateFilter.from_singe_date(ddo.day_source))
             
@@ -458,6 +564,22 @@ class WriteAPI:
 
             reader.remove_last_filter()
 
+    @staticmethod
+    def apply_date_override(date_override : DayDateOverride, event : Event, call_save_method : bool = True):
+        """Apply DayDateOverride to given Event
+        
+        Use date_override=None to detach Event from date override
+        """
+
+        if date_override:
+            event.date = date_override.day_destination
+            event.date_override = date_override      
+        else:
+            event.date = event.date_override.day_source
+
+        if call_save_method:
+            event.save()
+
     @classmethod
     def fill_event_table(cls, abstract_event):
         """Clear Event table and fill it from given AbstractEvent
@@ -468,6 +590,7 @@ class WriteAPI:
 
         try:
             iterator = iter(abstract_event)
+        # working with single AbstractEvent
         except TypeError:
             # deleting Events only for specified AbstractEvent
             filter_query.update({"abstract_event__pk" : abstract_event.pk})
@@ -475,16 +598,17 @@ class WriteAPI:
             Event.objects.filter(**filter_query).delete()
             
             # filling semester by Events from abstract_event
-            cls.fill_semester(abstract_event)
+            cls.fill_semester_by_repeating(abstract_event)
+        # working with lsit of AbstractEvents
         else:
             # deleting Events only for specified AbstractEvents
             filter_query.update({"abstract_event__in" : abstract_event})
 
             Event.objects.filter(**filter_query).delete()
             
-            # filling semester by Events from abstract_event
+            # filling semester by Events from every AbstractEvent
             for ae in abstract_event:
-                cls.fill_semester(ae)
+                cls.fill_semester_by_repeating(ae)
                 
         return True
     
@@ -513,22 +637,6 @@ class WriteAPI:
 
             e.save()
     
-    @staticmethod
-    def apply_date_override(date_override : DayDateOverride, event : Event, call_save_method : bool = True):
-        """Apply DayDateOverride to given Event
-        
-        Use date_override=None to detach Event from date override
-        """
-
-        if date_override:
-            event.date = date_override.day_destination
-            event.date_override = date_override      
-        else:
-            event.date = event.date_override.day_source
-
-        if call_save_method:
-            event.save()
-
     @staticmethod
     def apply_event_canceling(event_cancel : EventCancel, event : Event, call_save_method : bool = True):
         """Apply EventCancel to given Event

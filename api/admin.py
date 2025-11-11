@@ -214,9 +214,9 @@ class AbstractEventAdmin(BaseAdmin):
 
     actions = ["test_import_data", "delete_events", "fill", "check_fields"]
 
-    @admin.action(description="(ТЕСТ)Импортировать расписание из файла")
+    @admin.action(description="Импортировать расписание из файла")
     def test_import_data(modeladmin, request, queryset):
-        if not ImportAPI.import_data("testdata/import_v2.json"):
+        if not ImportAPI.import_data("testdata/import.json"):
             messages.success(request, "Импорт успешно произведён")
         else:
             messages.error(request, "Файл не найден или не существует")
