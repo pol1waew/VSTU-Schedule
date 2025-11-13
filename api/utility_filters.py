@@ -100,7 +100,7 @@ class PlaceFilter(UtilityFilterBase):
 
         filter_ = cls.by_repr(repr)
 
-        for key in filter_.keys():
+        for key in list(filter_.keys()):
             filter_["places_override__{}".format(key)] = filter_.pop(key)
 
         return filter_
@@ -121,8 +121,13 @@ class PlaceFilter(UtilityFilterBase):
             room = []
             
             for r in repr:
-                building.append(r.split(" ", 1)[0])
-                room.append(r.split(" ", 1)[1])
+                room_repr_spilted = r.split(" ", 1)
+                if len(room_repr_spilted) == 1:
+                    building.append("")
+                    room.append(room_repr_spilted)
+                else:
+                    building.append(room_repr_spilted[0])
+                    room.append(room_repr_spilted[1])
 
             fitler_ = cls.by_building(building)
             fitler_.update(cls.by_room(room))
