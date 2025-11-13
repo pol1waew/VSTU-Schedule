@@ -416,15 +416,24 @@ class ImportAPI:
 
         subjects = ref_data.get("subjects", set())
         if subjects:
-            reference_lookup["subjects"] = Subject.objects.in_bulk(list(subjects), field_name="name")
+            subject_qs = Subject.objects.filter(name__in=list(subjects))
+            reference_lookup["subjects"] = {}
+            for subject in subject_qs:
+                reference_lookup["subjects"].setdefault(subject.name, subject)
 
         kinds = ref_data.get("kinds", set())
         if kinds:
-            reference_lookup["kinds"] = EventKind.objects.in_bulk(list(kinds), field_name="name")
+            kind_qs = EventKind.objects.filter(name__in=list(kinds))
+            reference_lookup["kinds"] = {}
+            for kind in kind_qs:
+                reference_lookup["kinds"].setdefault(kind.name, kind)
 
         all_participants = ref_data.get("teacher_names", set()) | ref_data.get("group_names", set())
         if all_participants:
-            reference_lookup["participants"] = EventParticipant.objects.in_bulk(list(all_participants), field_name="name")
+            participants_qs = EventParticipant.objects.filter(name__in=list(all_participants))
+            reference_lookup["participants"] = {}
+            for participant in participants_qs:
+                reference_lookup["participants"].setdefault(participant.name, participant)
 
         places = ref_data.get("places", set())
         if places:
