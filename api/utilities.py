@@ -126,6 +126,166 @@ class Utilities:
 
 
 class ImportAPI:
+    SUBJECT_NORMALIZATION_CAPITALIZE = False
+
+    @staticmethod
+    def _normalize_subject_name(name: str) -> str:
+        return name.strip()
+
+    @staticmethod
+    def _normalize_kind_name(kind: str) -> str:
+        return kind.strip().capitalize()
+
+    @staticmethod
+    def _normalize_participant_name(name: str) -> str:
+        return name.strip()
+
+    @staticmethod
+    def _normalize_place_repr(place: str) -> tuple[str, str] | None:
+        if place is None:
+            return None
+
+        value = place.strip()
+
+        if not value:
+            return None
+
+        if "," in value:
+            building_part, tail = value.split(",", 1)
+            building = building_part.strip()
+            tail = tail.strip()
+
+            if tail:
+                return building, tail
+            value = building
+
+        if " " in value:
+            building_part, tail = value.split(" ", 1)
+            return building_part.strip(), tail.strip()
+
+        return value, ""
+
+    @classmethod
+    def _collect_reference_data(cls, entries) -> dict:
+        subjects: set[str] = set()
+        kinds: set[str] = set()
+        teacher_names: set[str] = set()
+        group_names: set[str] = set()
+        places: set[tuple[str, str]] = set()
+
+        for entry in entries:
+            subjects.add(cls._normalize_subject_name(entry["subject"]))
+            kinds.add(cls._normalize_kind_name(entry["kind"]))
+
+            for teacher_name in entry.get("participants", {}).get("teachers", []):
+                normalized = cls._normalize_participant_name(teacher_name)
+                if normalized:
+                    teacher_names.add(normalized)
+
+            for group_name in entry.get("participants", {}).get("student_groups", []):
+                normalized = cls._normalize_participant_name(group_name)
+                if normalized:
+                    group_names.add(normalized)
+
+            for place_repr in entry.get("places", []):
+                normalized_place = cls._normalize_place_repr(place_repr)
+                if normalized_place:
+                    places.add(normalized_place)
+
+        return {
+            "subjects": subjects,
+            "kinds": kinds,
+            "teacher_names": teacher_names,
+            "group_names": group_names,
+            "places": places,
+        }
+
+    @classmethod
+    def _ensure_reference_data(cls, ref_data: dict) -> None:
+        if not ref_data:
+            return
+
+        subjects = ref_data.get("subjects", set())
+        if subjects:
+            existing_subjects = set(
+                Subject.objects.filter(name__in=subjects).values_list("name", flat=True)
+            )
+            new_subjects = [
+                Subject(name=name)
+                for name in subjects
+                if name not in existing_subjects
+            ]
+            if new_subjects:
+                Subject.objects.bulk_create(new_subjects)
+
+        kinds = ref_data.get("kinds", set())
+        if kinds:
+            existing_kinds = set(
+                EventKind.objects.filter(name__in=kinds).values_list("name", flat=True)
+            )
+            new_kinds = [
+                EventKind(name=name)
+                for name in kinds
+                if name not in existing_kinds
+            ]
+            if new_kinds:
+                EventKind.objects.bulk_create(new_kinds)
+
+        teacher_names = ref_data.get("teacher_names", set())
+        group_names = ref_data.get("group_names", set())
+        all_participant_names = teacher_names | group_names
+
+        if all_participant_names:
+            existing_participants = set(
+                EventParticipant.objects.filter(name__in=all_participant_names).values_list("name", flat=True)
+            )
+            new_participants: list[EventParticipant] = []
+
+            for name in teacher_names:
+                if name in existing_participants:
+                    continue
+                new_participants.append(
+                    EventParticipant(
+                        name=name,
+                        role=EventParticipant.Role.TEACHER,
+                        is_group=False,
+                    )
+                )
+
+            for name in group_names:
+                if name in existing_participants:
+                    continue
+                new_participants.append(
+                    EventParticipant(
+                        name=name,
+                        role=EventParticipant.Role.STUDENT,
+                        is_group=True,
+                    )
+                )
+
+            if new_participants:
+                EventParticipant.objects.bulk_create(new_participants)
+
+        places = ref_data.get("places", set())
+        if places:
+            buildings = {building for building, _ in places}
+
+            if buildings:
+                existing_places = set(
+                    EventPlace.objects.filter(building__in=buildings).values_list("building", "room")
+                )
+            else:
+                existing_places = set()
+
+            new_places = [
+                EventPlace(building=building, room=room)
+                for building, room in places
+                if (building, room) not in existing_places
+            ]
+
+            if new_places:
+                EventPlace.objects.bulk_create(new_places)
+
     @classmethod
     def import_data(cls, data_file_path : str) -> int:
         """Reads data from given file and fill database with new Events
@@ -154,10 +314,13 @@ class ImportAPI:
         """
         
         schedule = cls.get_schedule(title)
+        reference_data = cls._collect_reference_data(entries)
+        cls._ensure_reference_data(reference_data)
+        reference_lookup = cls._build_reference_lookup(reference_data)
         global_calendar = cls.make_calendar(weeks, months, schedule)
 
         for entry in entries:
-            cls.use_parsed_data(*cls.parse_data(entry, global_calendar, week_days), schedule)
+            cls.use_parsed_data(*cls.parse_data(entry, global_calendar, week_days, reference_lookup), schedule)
         
     @classmethod
     def make_calendar(cls, weeks, months : list[str], schedule : Schedule) -> dict:
@@ -243,33 +406,116 @@ class ImportAPI:
         return MONTHS[name.lower()]
 
     @classmethod
-    def parse_data(cls, entry, global_calendar, week_days : list[str]):
+    def _build_reference_lookup(cls, ref_data: dict) -> dict:
+        reference_lookup = {
+            "subjects": {},
+            "kinds": {},
+            "participants": {},
+            "places": {},
+        }
+
+        subjects = ref_data.get("subjects", set())
+        if subjects:
+            reference_lookup["subjects"] = Subject.objects.in_bulk(list(subjects), field_name="name")
+
+        kinds = ref_data.get("kinds", set())
+        if kinds:
+            reference_lookup["kinds"] = EventKind.objects.in_bulk(list(kinds), field_name="name")
+
+        all_participants = ref_data.get("teacher_names", set()) | ref_data.get("group_names", set())
+        if all_participants:
+            reference_lookup["participants"] = EventParticipant.objects.in_bulk(list(all_participants), field_name="name")
+
+        places = ref_data.get("places", set())
+        if places:
+            buildings = {building for building, _ in places}
+            if buildings:
+                place_queryset = EventPlace.objects.filter(building__in=buildings)
+            else:
+                place_queryset = EventPlace.objects.none()
+
+            reference_lookup["places"] = {
+                (place.building, place.room): place for place in place_queryset
+            }
+
+        return reference_lookup
+
+    @classmethod
+    def parse_data(cls, entry, global_calendar, week_days : list[str], reference_lookup : dict):
         """Finds existing models for JSON data
 
-        Method does not create new models except AbstractEvent and its Events!
-
-        All data found in JSON, such as EventKind, Subject or EventParticipants, 
-        must already exists in database as models
+        Метод использует заранее подготовленные справочные данные. 
         """
-
-        event_participant_names = entry["participants"]["teachers"] + entry["participants"]["student_groups"]
 
         week_id = entry["week"]
         week_day_index = entry["week_day_index"]
 
-        kind = EventKind.objects.get(name=entry["kind"].capitalize())
-        subject = Subject.objects.get(name=entry["subject"])
-        participants = EventParticipant.objects.filter(name__in=event_participant_names).all()
-        places = EventPlace.objects.filter(**filters.PlaceFilter.by_repr(entry["places"])).all()
+        kind_name = cls._normalize_kind_name(entry["kind"])
+        kind = reference_lookup["kinds"].get(kind_name)
+        if kind is None:
+            raise EventKind.DoesNotExist(f"Тип события '{kind_name}' не найден после подготовки справочников.")
+
+        subject_name = cls._normalize_subject_name(entry["subject"])
+        subject = reference_lookup["subjects"].get(subject_name)
+        if subject is None:
+            raise Subject.DoesNotExist(f"Предмет '{subject_name}' не найден после подготовки справочников.")
+
+        participants = []
+        missing_participants = []
+
+        for teacher_name in entry.get("participants", {}).get("teachers", []):
+            normalized = cls._normalize_participant_name(teacher_name)
+            participant = reference_lookup["participants"].get(normalized)
+            if participant:
+                participants.append(participant)
+            else:
+                missing_participants.append(normalized)
+
+        for group_name in entry.get("participants", {}).get("student_groups", []):
+            normalized = cls._normalize_participant_name(group_name)
+            participant = reference_lookup["participants"].get(normalized)
+            if participant:
+                participants.append(participant)
+            else:
+                missing_participants.append(normalized)
+
+        if missing_participants:
+            raise EventParticipant.DoesNotExist(
+                f"Не удалось найти участников: {', '.join(missing_participants)}"
+            )
+
+        places = []
+        missing_places = []
+        for place_repr in entry.get("places", []):
+            normalized_place = cls._normalize_place_repr(place_repr)
+            if not normalized_place:
+                continue
+
+            place = reference_lookup["places"].get(normalized_place)
+            if place:
+                places.append(place)
+            else:
+                missing_places.append(place_repr)
+
+        if missing_places:
+            raise EventPlace.DoesNotExist(
+                f"Не удалось найти аудитории: {', '.join(missing_places)}"
+            )
+
         abstract_day = AbstractDay.objects.get(
             name__startswith=1 if week_id == "first_week" else 2,
             name__endswith=week_days[week_day_index].capitalize()
         )
         time_slots = TimeSlot.objects.filter(**filters.TimeSlotFilter.by_repr(entry["hours"]))
-        if entry["holds_on_date"]:
+        if not time_slots.exists():
+            raise TimeSlot.DoesNotExist(
+                f"Не найден учебный час для значений: {', '.join(map(str, entry.get('hours', [])))}"
+            )
+        holds_on_date_values = entry.get("holds_on_date") or []
+        if holds_on_date_values:
             holds_on_dates = []
 
-            for date_ in entry["holds_on_date"]:
+            for date_ in holds_on_date_values:
                 holds_on_dates.append(datetime.strptime(date_, "%d.%m.%Y").date())
         else:
             holds_on_dates = [ None ]
@@ -320,22 +566,49 @@ class ImportAPI:
             schedule
         """
         
-        COURSE_REG_EX = r"(\d) курса"
-        FACULTY_REG_EX = r"курса ([А-Я]+)"
-        SEMESTER_REG_EX = r"(\d) семестр"
-        FULL_YEARS_REG_EX = r"(\d{4}-\d{4}) учебного"
+        COURSE_REG_EX = r"(\d)\s*курса?"
+        SEMESTER_REG_EX = r"(\d)\s*семестр"
+        FULL_YEARS_REG_EX = r"(\d{4}-\d{4})"
 
-        course = re.search(COURSE_REG_EX, title).group(1)
-        faculty = re.search(FACULTY_REG_EX, title).group(1)
-        semester = re.search(SEMESTER_REG_EX, title).group(1)
-        years = re.search(FULL_YEARS_REG_EX, title).group(1)
+        filter_kwargs = {}
 
-        return Schedule.objects.get(**filters.ScheduleFilter.by_base_parameters(
-            course,
-            faculty,
-            semester,
-            years
-        ))
+        course_match = re.search(COURSE_REG_EX, title, flags=re.IGNORECASE)
+        if course_match:
+            filter_kwargs["metadata__course"] = int(course_match.group(1))
+
+        faculty_tokens = re.findall(r"[А-ЯЁ]{2,}", title)
+        if faculty_tokens:
+            filter_kwargs["schedule_template__metadata__faculty__iexact"] = faculty_tokens[-1]
+
+        semester_match = re.search(SEMESTER_REG_EX, title, flags=re.IGNORECASE)
+        if semester_match:
+            filter_kwargs["metadata__semester"] = int(semester_match.group(1))
+
+        years_match = re.search(FULL_YEARS_REG_EX, title)
+        if years_match:
+            filter_kwargs["metadata__years"] = years_match.group(1)
+
+        if not filter_kwargs:
+            raise ValueError(
+                f"Не удалось извлечь параметры расписания из заголовка '{title}'. "
+                "Убедитесь, что он содержит хотя бы номер курса и сокращение факультета."
+            )
+
+        schedules = Schedule.objects.filter(**filter_kwargs)
+
+        if not schedules.exists():
+            raise Schedule.DoesNotExist(
+                f"Расписание с параметрами {filter_kwargs} не найдено. "
+                f"Заголовок: '{title}'."
+            )
+
+        if schedules.count() > 1:
+            raise Schedule.MultipleObjectsReturned(
+                f"Найдено несколько расписаний, удовлетворяющих параметрам {filter_kwargs}. "
+                "Уточните заголовок или дополните его семестром и учебным годом."
+            )
+
+        return schedules.first()
 
 
 class ReadAPI:
