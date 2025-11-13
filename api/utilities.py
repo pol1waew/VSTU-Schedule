@@ -361,13 +361,24 @@ class ImportAPI:
         }
         """
 
+        normalized_weeks = {}
+        if isinstance(weeks, dict):
+            normalized_weeks = weeks
+        elif isinstance(weeks, list):
+            for week_entry in weeks:
+                if isinstance(week_entry, dict):
+                    for week_key, data in week_entry.items():
+                        normalized_weeks[week_key] = data
+        else:
+            raise ValueError("Некорректный формат данных недель в JSON.")
+
         calendar = {}
         left_year, right_year = schedule.metadata.years.split("-", 1)
 
-        for week_id in weeks.keys():
+        for week_id in normalized_weeks.keys():
             calendar[week_id] = {}
 
-            for week_day in weeks[week_id]:
+            for week_day in normalized_weeks[week_id]:
                 calendar[week_id][week_day["week_day_index"]] = []
 
                 for month in week_day["calendar"]:
