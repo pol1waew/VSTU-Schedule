@@ -4,3 +4,4 @@ django-filter
 drf-redesign
 Markdown
 django_extensions
+xlsxwriter
