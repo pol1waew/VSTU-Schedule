@@ -114,27 +114,30 @@ class PlaceFilter(UtilityFilterBase):
         repr must be in format: "{building} {room}" (separated by space)
         """
 
+        from api.utilities import Utilities
+
         fitler_ = {}
 
         if type(repr) is list:
-            building = []
-            room = []
+            buildings = []
+            rooms = []
             
             for r in repr:
-                room_repr_spilted = r.split(" ", 1)
-                if len(room_repr_spilted) == 1:
-                    building.append("")
-                    room.append(room_repr_spilted)
-                else:
-                    building.append(room_repr_spilted[0])
-                    room.append(room_repr_spilted[1])
+                building, room = Utilities.normalize_place_repr(r)
 
-            fitler_ = cls.by_building(building)
-            fitler_.update(cls.by_room(room))
+                if building:
+                    buildings.append(building)
+                rooms.append(room)
+
+            if buildings:
+                fitler_ = cls.by_building(buildings)
+            fitler_.update(cls.by_room(rooms))
         else:
-            print(repr)
-            fitler_ = cls.by_building(repr.split(" ", 1)[0])
-            fitler_.update(cls.by_room(repr.split(" ", 1)[1]))
+            building, room = Utilities.normalize_place_repr(r)
+            
+            if building:
+                fitler_ = cls.by_building(building)
+            fitler_.update(cls.by_room(room))
 
         return fitler_
 
@@ -260,22 +263,3 @@ class AbstractEventFilter(UtilityFilterBase):
     @staticmethod
     def with_existing_events():
         return {"pk__in" : Event.objects.values_list("abstract_event__pk", flat=True).distinct()}
-
-class ScheduleFilter(UtilityFilterBase):
-    """Only for work with Schedule model fields
-    """
-    
-    @staticmethod
-    def by_base_parameters(course : int, 
-                           faculty : str,
-                           semester : int,
-                           years : str):
-        """
-
-        Years must be presented in format: YYYY-YYYY (START_YEAR-END_YEAR)
-        """
-        
-        return {"metadata__course" : course,
-                "schedule_template__metadata__faculty" : faculty,
-                "metadata__semester" : semester,
-                "metadata__years" : years}

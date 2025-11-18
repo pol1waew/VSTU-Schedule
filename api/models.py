@@ -74,7 +74,7 @@ class EventPlace(CommonModel):
         verbose_name = "Место проведения события"
         verbose_name_plural = "Места проведения события"
 
-    building = models.CharField(max_length=128, verbose_name="Корпус")
+    building = models.CharField(blank=True, max_length=128, verbose_name="Корпус")
     room = models.CharField(max_length=64, verbose_name="Аудитория")
 
     def __repr__(self):

@@ -1,4 +1,4 @@
-from api.utilities import ReadAPI, WriteAPI
+from api.utilities import Utilities, ReadAPI, WriteAPI
 from api.utility_filters import *
 from api.models import Event
 from collections import defaultdict
@@ -118,62 +118,53 @@ def get_row_spans(entries):
     return row_spans
 
 
-def get_month_name(i : int):
-    """Returns month name from month number
-    """
-    
-    MONTH_NAMES = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"]
-    
-    return MONTH_NAMES[i - 1]
-
-
 def get_calendar(entries):
     """Makes and returns calendar for given entries
+
+    Calendar format:
+    [
+        [['Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь', 'Январь'], [[1, 13, 10, 8, 5], [15, 27, 24, 22, 19], [29, '', '', '', '']]]
+    ]
     """
     
     calendar = []
 
     for entry in entries:
-        # list of monthes to show
-        monthes = []
-        # list of days for every month to show
-        days = []
+        months = []
+        month_days = []
         dates = []
-        start_date, end_date, date, repetition_period = WriteAPI.get_semester_filling_parameters(entry[0].abstract_event)
+        _, end_date, date, repetition_period = WriteAPI.get_semester_filling_parameters(entry[0].abstract_event)
+
 
         while date < end_date:
-            if date >= start_date:
-                dates.append(date)
+            if not date.month in months:
+                months.append(date.month)
+
+                if dates:
+                    month_days.append(dates)
+                    dates = []
+                
+            dates.append(date.day)
             
             date += timedelta(days=repetition_period)
-
-        m = start_date.month
-        while m <= end_date.month:
-            monthes.append(get_month_name(m))
-
-            # list will be empty if month havent any studying day
-            days.append([])
-            for d in reversed(dates):
-                if d.month == m:
-                    days[len(days) - 1].append(d.day)
-                    dates.remove(d)
-
-            days[len(days) - 1].sort()
-
-            m += 1
+        
+        if dates:
+            month_days.append(dates)
+            dates = []
 
         calendar.append([])
-        calendar[len(calendar) - 1].append(monthes)
-        calendar[len(calendar) - 1].append(format_days(days))
-            
-        # calendar can be buided from first event in entry
+        calendar[len(calendar) - 1].append(Utilities.get_month_name(months))
+        calendar[len(calendar) - 1].append(format_days(month_days))
+
+        # calendar can be builded from first event each day
         continue
 
     return calendar
 
+
 def format_days(days : list):
-    '''Transforms days order from column into row oriented
-    '''
+    """Transforms days order from column into row oriented
+    """
     
     max_days_count = 0
     formated_days = []
@@ -193,6 +184,7 @@ def format_days(days : list):
         formated_days.append(row)
 
     return formated_days
+
 
 def get_POST_value(POST, name):
     """Returns POST value by represented name

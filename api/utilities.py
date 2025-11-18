@@ -124,46 +124,94 @@ class Utilities:
 
         return True, return_message
 
+    @staticmethod
+    def normalize_place_repr(place_repr: str) -> tuple[str, str] | None:
+        """Get a place and convert it into acceptable format
+
+        Take place in formats {building}{room} separated by
+        ' ' or ',' or '-'         
+        
+        Returns None if no room given
+
+        If no building given, first string will be empty: ("", {room})
+        """
+        
+        if place_repr is None:
+            return None
+
+        place = place_repr.strip()
+
+        if not place:
+            return None
+        
+        # SPACE should be always the last one
+        for separator in [",", "-", " "]:
+            if separator in place:
+                building_part, room_part = place.split(separator, 1)
+                building = building_part.strip()
+                room = room_part.strip()
+
+                if room:
+                    return building, room
+                
+                return None
+
+        return "", place
+
+    @staticmethod
+    def get_month_number(name : str):
+        """Returns month number from month name
+        """
+        
+        MONTHS = { 
+            "январь" : 1, 
+            "февраль" : 2, 
+            "март" : 3, 
+            "апрель" : 4, 
+            "май" : 5, 
+            "июнь" : 6, 
+            "июль" : 7, 
+            "август" : 8, 
+            "сентябрь" : 9, 
+            "октябрь" : 10, 
+            "ноябрь": 11, 
+            "декабрь" : 12
+        }
+        
+        return MONTHS[name.lower()]
+    
+    @staticmethod
+    def get_month_name(month_number : int|list[int]) -> str|list[str]:
+        """Returns month name from month number
+        """
+        
+        MONTH_NAMES = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"]
+        
+        if type(month_number) is list:
+            names = []
+
+            for i in month_number:
+                names.append(MONTH_NAMES[i - 1])
+
+            return names
+
+        return MONTH_NAMES[month_number - 1]
+
 
 class ImportAPI:
     SUBJECT_NORMALIZATION_CAPITALIZE = False
 
     @staticmethod
-    def _normalize_subject_name(name: str) -> str:
+    def _normalize_subject_name(name : str) -> str:
         return name.strip()
 
     @staticmethod
-    def _normalize_kind_name(kind: str) -> str:
+    def _normalize_kind_name(kind : str) -> str:
         return kind.strip().capitalize()
 
     @staticmethod
-    def _normalize_participant_name(name: str) -> str:
+    def _normalize_participant_name(name : str) -> str:
         return name.strip()
-
-    @staticmethod
-    def _normalize_place_repr(place: str) -> tuple[str, str] | None:
-        if place is None:
-            return None
-
-        value = place.strip()
-
-        if not value:
-            return None
-
-        if "," in value:
-            building_part, tail = value.split(",", 1)
-            building = building_part.strip()
-            tail = tail.strip()
-
-            if tail:
-                return building, tail
-            value = building
-
-        if " " in value:
-            building_part, tail = value.split(" ", 1)
-            return building_part.strip(), tail.strip()
-
-        return value, ""
 
     @classmethod
     def _collect_reference_data(cls, entries) -> dict:
@@ -188,7 +236,7 @@ class ImportAPI:
                     group_names.add(normalized)
 
             for place_repr in entry.get("places", []):
-                normalized_place = cls._normalize_place_repr(place_repr)
+                normalized_place = Utilities.normalize_place_repr(place_repr)
                 if normalized_place:
                     places.add(normalized_place)
 
@@ -268,11 +316,11 @@ class ImportAPI:
 
         places = ref_data.get("places", set())
         if places:
-            buildings = {building for building, _ in places}
+            rooms = {room for _, room in places}
 
-            if buildings:
+            if rooms:
                 existing_places = set(
-                    EventPlace.objects.filter(building__in=buildings).values_list("building", "room")
+                    EventPlace.objects.filter(room__in=rooms).values_list("building", "room")
                 )
             else:
                 existing_places = set()
@@ -294,7 +342,6 @@ class ImportAPI:
         try:
             with open(data_file_path, mode="r", encoding="utf8") as data_file:
                 data = json.load(data_file)
-            
         except FileNotFoundError or FileExistsError:
             return 1
         
@@ -382,7 +429,7 @@ class ImportAPI:
                 calendar[week_id][week_day["week_day_index"]] = []
 
                 for month in week_day["calendar"]:
-                    month_number = cls.get_month_number(months[month["month_index"]])
+                    month_number = Utilities.get_month_number(months[month["month_index"]])
 
                     for month_day in month["month_days"]:
                         calendar[week_id][week_day["week_day_index"]].append(
@@ -393,28 +440,6 @@ class ImportAPI:
                         )
 
         return calendar
-    
-    @staticmethod
-    def get_month_number(name : str):
-        """Returns month number from month name
-        """
-        
-        MONTHS = { 
-            "январь" : 1, 
-            "февраль" : 2, 
-            "март" : 3, 
-            "апрель" : 4, 
-            "май" : 5, 
-            "июнь" : 6, 
-            "июль" : 7, 
-            "август" : 8, 
-            "сентябрь" : 9, 
-            "октябрь" : 10, 
-            "ноябрь": 11, 
-            "декабрь" : 12
-        }
-        
-        return MONTHS[name.lower()]
 
     @classmethod
     def _build_reference_lookup(cls, ref_data: dict) -> dict:
@@ -464,7 +489,7 @@ class ImportAPI:
     def parse_data(cls, entry, global_calendar, week_days : list[str], reference_lookup : dict):
         """Finds existing models for JSON data
 
-        Метод использует заранее подготовленные справочные данные. 
+        Method uses pre-prepared reference data
         """
 
         week_id = entry["week"]
@@ -507,7 +532,7 @@ class ImportAPI:
         places = []
         missing_places = []
         for place_repr in entry.get("places", []):
-            normalized_place = cls._normalize_place_repr(place_repr)
+            normalized_place = Utilities.normalize_place_repr(place_repr)
             if not normalized_place:
                 continue
 
@@ -572,7 +597,6 @@ class ImportAPI:
 
                 WriteAPI.fill_semester_by_dates(created_abstract_event, calendar)
         
-
     @staticmethod
     def get_schedule(title : str) -> Schedule:
         """Parse timetable title and find Schedule based on this title
@@ -586,8 +610,20 @@ class ImportAPI:
             schedule
         """
         
+        # 4 курса
+        # 4 курс
+        # 4курса
+        # 4   курса
         COURSE_REG_EX = r"(\d)\s*курса?"
+        # ФЭВТ
+        # ТК
+        # курсФЭВТна
+        FACULTY_REG_EX = r"[А-ЯЁ]{2,}"
+        # 2 семестр
+        # 2семестр
+        # 2   семестр
         SEMESTER_REG_EX = r"(\d)\s*семестр"
+        # 2024-2025
         FULL_YEARS_REG_EX = r"(\d{4}-\d{4})"
 
         filter_kwargs = {}
@@ -596,7 +632,7 @@ class ImportAPI:
         if course_match:
             filter_kwargs["metadata__course"] = int(course_match.group(1))
 
-        faculty_tokens = re.findall(r"[А-ЯЁ]{2,}", title)
+        faculty_tokens = re.findall(FACULTY_REG_EX, title)
         if faculty_tokens:
             filter_kwargs["schedule_template__metadata__faculty__iexact"] = faculty_tokens[-1]
 
