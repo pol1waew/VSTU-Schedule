@@ -1,7 +1,7 @@
 from django.test import TestCase
 from api.utilities import Utilities
 
-class TestImportAPI(TestCase):
+class TestUtilities(TestCase):
     def test_normalize_full_place_repr(self):
         COMMA_AND_SPACE_SEPARATED = "В, 902б"
         COMMA_SEPARATED = "В,902б"
@@ -47,4 +47,30 @@ class TestImportAPI(TestCase):
         self.assertSequenceEqual(
             Utilities.normalize_place_repr(BUILDING_AND_ROOM_NOT_SEPARATED),
             NOT_SEPARATED_EXPECTED_VALUE
+        )
+
+    def test_month_number_into_name(self):
+        MONTH_NUMBERS = [1, 6, 12]
+        NOT_EXISTING_MONTH_NUMBERS = [0, -12, 13]
+        EXISTING_AND_NOT_MONTH_NUMBERS = [9, -1, 3, 99]
+
+        EXPECTED_MONTH_NAMES = ["Январь", "Июнь", "Декабрь"]
+        EXPECTED_NOT_EXISTING_MONTH_NAMES = [None, None, None]
+        EXPECTED_EXISTING_AND_NOT_MONTH_NAMES = ["Сентябрь", None, "Март", None]
+
+        self.assertEqual(
+            Utilities.get_month_name(MONTH_NUMBERS[0]),
+            EXPECTED_MONTH_NAMES[0]
+        )
+        self.assertSequenceEqual(
+            Utilities.get_month_name(MONTH_NUMBERS),
+            EXPECTED_MONTH_NAMES
+        )
+        self.assertSequenceEqual(
+            Utilities.get_month_name(NOT_EXISTING_MONTH_NUMBERS),
+            EXPECTED_NOT_EXISTING_MONTH_NAMES
+        )
+        self.assertSequenceEqual(
+            Utilities.get_month_name(EXISTING_AND_NOT_MONTH_NUMBERS),
+            EXPECTED_EXISTING_AND_NOT_MONTH_NAMES
         )

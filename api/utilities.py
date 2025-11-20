@@ -40,7 +40,6 @@ class Utilities:
     PLACES_BASE_MESSAGE = 'АУДИТОРИИ одновременно задействованы в других запланированных событиях:<br>'
     PLACE_MESSAGE_TEMPLATE = '<a href="{}">{}</a>, '
 
-
     @classmethod
     def check_abstract_event(cls, abstract_event : AbstractEvent) -> tuple[bool, SafeText]:
         """Check given AbstractEvent for models double usage
@@ -181,8 +180,10 @@ class Utilities:
         return MONTHS[name.lower()]
     
     @staticmethod
-    def get_month_name(month_number : int|list[int]) -> str|list[str]:
+    def get_month_name(month_number : int|list[int]) -> str|None|list[str|None]:
         """Returns month name from month number
+
+        Returns None for not-existing month number
         """
         
         MONTH_NAMES = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"]
@@ -191,11 +192,15 @@ class Utilities:
             names = []
 
             for i in month_number:
-                names.append(MONTH_NAMES[i - 1])
+                names.append(
+                    MONTH_NAMES[i - 1] 
+                    if i >= 1 and i <= 12 
+                    else None
+                )
 
             return names
 
-        return MONTH_NAMES[month_number - 1]
+        return MONTH_NAMES[month_number - 1] if month_number >= 1 and month_number <= 12 else None
 
 
 class ImportAPI:
@@ -335,25 +340,19 @@ class ImportAPI:
                 EventPlace.objects.bulk_create(new_places)
 
     @classmethod
-    def import_data(cls, data_file_path : str) -> int:
+    def import_data(cls, data_file : str):
         """Reads data from given file and fill database with new Events
         """
         
-        try:
-            with open(data_file_path, mode="r", encoding="utf8") as data_file:
-                data = json.load(data_file)
-        except FileNotFoundError or FileExistsError:
-            return 1
+        json_data = json.loads(data_file)
         
         cls.make_import(
-            data["title"],
-            data["table"]["grid"],
-            data["table"]["datetime"]["weeks"],
-            data["table"]["datetime"]["week_days"],
-            data["table"]["datetime"]["months"]
+            json_data["title"],
+            json_data["table"]["grid"],
+            json_data["table"]["datetime"]["weeks"],
+            json_data["table"]["datetime"]["week_days"],
+            json_data["table"]["datetime"]["months"]
         )
-
-        return 0
     
     @classmethod
     def make_import(cls, title : str, entries, weeks, week_days : list[str], months : list[str]):
@@ -551,11 +550,13 @@ class ImportAPI:
             name__startswith=1 if week_id == "first_week" else 2,
             name__endswith=week_days[week_day_index].capitalize()
         )
+
         time_slots = TimeSlot.objects.filter(**filters.TimeSlotFilter.by_repr(entry["hours"]))
         if not time_slots.exists():
             raise TimeSlot.DoesNotExist(
                 f"Не найден учебный час для значений: {', '.join(map(str, entry.get('hours', [])))}"
             )
+        
         holds_on_date_values = entry.get("holds_on_date") or []
         if holds_on_date_values:
             holds_on_dates = []
@@ -987,6 +988,7 @@ class WriteAPI:
     def make_changes_file(abs_event_changes) -> HttpResponse|None:
         """Makes XLS file for given AbstractEventChanges
         """
+        
         if not abs_event_changes.exists():
             return None
         

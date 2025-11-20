@@ -4,6 +4,8 @@ from django.contrib import admin, messages
 from django.contrib.admin.actions import delete_selected
 from django.forms import BaseInlineFormSet
 from django.utils import timezone
+from django.urls import path
+from django.http import HttpResponseRedirect
 from django.contrib.admin.helpers import ACTION_CHECKBOX_NAME
 from rest_framework.authtoken.admin import TokenAdmin
 from api.models import (
@@ -208,18 +210,23 @@ class AbstractEventChangesAdmin(BaseAdmin):
 
 @admin.register(AbstractEvent)
 class AbstractEventAdmin(BaseAdmin):
+    change_list_template = "../templates/abstractEvent.html"
     list_display = ("datemodified", "subject", "abstract_day", "time_slot")
     search_fields = ("participants__name", "subject__name", "places__building", "places__room", "kind__name")
     list_filter = ("kind__name",)
 
-    actions = ["test_import_data", "delete_events", "fill", "check_fields"]
+    actions = ["delete_events", "fill", "check_fields"]
 
-    @admin.action(description="Импортировать расписание из файла")
-    def test_import_data(modeladmin, request, queryset):
-        if not ImportAPI.import_data("testdata/import.json"):
+    def get_urls(self):
+        return [path("import_data/", self.import_data)] + super().get_urls()
+
+    def import_data(self, request):
+        if request.method == "POST" and request.FILES.get("selected_file"):
             messages.success(request, "Импорт успешно произведён")
-        else:
-            messages.error(request, "Файл не найден или не существует")
+            ## TODO: when working with big files should use chunks() instead
+            ImportAPI.import_data(request.FILES['selected_file'].read())
+
+        return HttpResponseRedirect("../")
 
     @admin.action(description="Удалить связанные события")
     def delete_events(modeladmin, request, queryset):
