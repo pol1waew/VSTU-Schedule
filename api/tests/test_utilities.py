@@ -1,52 +1,42 @@
 from django.test import TestCase
 from api.utilities import Utilities
 
+"""py manage.py test api.tests.test_utilities
+"""
+
 class TestUtilities(TestCase):
     def test_normalize_full_place_repr(self):
-        COMMA_AND_SPACE_SEPARATED = "В, 902б"
-        COMMA_SEPARATED = "В,902б"
-        SPACE_SEPARATED = "В 902б"
-        DASH_SEPARATED = "В-902б"
-
         EXPECTED_VALUE = ("В", "902б")
 
         self.assertSequenceEqual(
-            Utilities.normalize_place_repr(COMMA_AND_SPACE_SEPARATED),
+            Utilities.normalize_place_repr("В, 902б"),
             EXPECTED_VALUE
         )
         self.assertSequenceEqual(
-            Utilities.normalize_place_repr(COMMA_SEPARATED),
+            Utilities.normalize_place_repr("В,902б"),
             EXPECTED_VALUE
         )
         self.assertSequenceEqual(
-            Utilities.normalize_place_repr(SPACE_SEPARATED),
+            Utilities.normalize_place_repr("В 902б"),
             EXPECTED_VALUE
         )
         self.assertSequenceEqual(
-            Utilities.normalize_place_repr(DASH_SEPARATED),
+            Utilities.normalize_place_repr("В-902б"),
             EXPECTED_VALUE
         )
 
     def test_normalize_half_place_repr(self):
-        ONLY_ROOM = "902б"
-        ONLY_BUILDING = "В-"
-        BUILDING_AND_ROOM_NOT_SEPARATED = "В902б"
-
-        ONLY_ROOM_EXPECTED_VALUE = ("", "902б")
-        ONLY_BUILDING_EXPECTED_VALUE = None
-        NOT_SEPARATED_EXPECTED_VALUE = ("", "В902б")
-
         self.assertSequenceEqual(
-            Utilities.normalize_place_repr(ONLY_ROOM),
-            ONLY_ROOM_EXPECTED_VALUE
+            Utilities.normalize_place_repr("902б"),
+            ("", "902б")
         )
         self.assertEqual(
-            Utilities.normalize_place_repr(ONLY_BUILDING),
-            ONLY_BUILDING_EXPECTED_VALUE
+            Utilities.normalize_place_repr("В-"),
+            None
         )
         self.assertSequenceEqual(
-            Utilities.normalize_place_repr(BUILDING_AND_ROOM_NOT_SEPARATED),
-            NOT_SEPARATED_EXPECTED_VALUE
+            Utilities.normalize_place_repr("В902б"),
+            ("", "В902б")
         )
 
     def test_month_number_into_name(self):
@@ -73,4 +63,26 @@ class TestUtilities(TestCase):
         self.assertSequenceEqual(
             Utilities.get_month_name(EXISTING_AND_NOT_MONTH_NUMBERS),
             EXPECTED_EXISTING_AND_NOT_MONTH_NAMES
+        )
+
+    def test_normalize_time_slot(self):
+        self.assertEqual(
+            Utilities.normalize_time_slot_repr("1-2"),
+            "1-2"
+        )
+        self.assertEqual(
+            Utilities.normalize_time_slot_repr("13.00"),
+            "13:00"
+        )
+        self.assertEqual(
+            Utilities.normalize_time_slot_repr("18:00"),
+            "18:00"
+        )
+        self.assertEqual(
+            Utilities.normalize_time_slot_repr("8:30-10.00"),
+            "8:30 10:00"
+        )
+        self.assertEqual(
+            Utilities.normalize_time_slot_repr("8.30 10:00"),
+            "8:30 10:00"
         )

@@ -124,10 +124,10 @@ class Utilities:
         return True, return_message
 
     @staticmethod
-    def normalize_place_repr(place_repr: str) -> tuple[str, str] | None:
-        """Get a place and convert it into acceptable format
+    def normalize_place_repr(place_repr : str) -> tuple[str, str]|None:
+        """Take place and convert it into acceptable format
 
-        Take place in formats {building}{room} separated by
+        Place must be in format: {building}{room} separated by
         ' ' or ',' or '-'         
         
         Returns None if no room given
@@ -156,6 +156,45 @@ class Utilities:
                 return None
 
         return "", place
+
+    @staticmethod
+    def normalize_time_slot_repr(time_slot_repr : str) -> str|None:
+        """Take time slot and convert it into acceptable format
+
+        Time slot must be present
+            as alt name: \d-\d
+            as start time: HH:MM or HH.MM
+            as start and end times: START_TIME-END_TIME or START_TIME END_TIME
+
+        Returns time slot in format:
+            \d-\d for alt name
+            HH:MM for start time
+            HH:MM HH:MM for start and end times
+        """
+
+        # 1-2
+        # 3 -  4
+        # exclude 8:30-10.00
+        ALT_NAME_REG_EX = r"^\d{1,2}\s*\-+\s*\d{1,2}$"
+
+        if time_slot_repr is None:
+            return None
+        
+        time_slot = time_slot_repr.strip()
+
+        if not time_slot:
+            return None
+        
+        # check for alt_name format
+        match_ = re.search(ALT_NAME_REG_EX, time_slot)
+
+        if match_:
+            return match_[0]
+        
+        time_slot = time_slot.replace(".", ":")
+        time_slot = time_slot.replace("-", " ")
+        
+        return time_slot
 
     @staticmethod
     def get_month_number(name : str):
@@ -470,6 +509,7 @@ class ImportAPI:
             for participant in participants_qs:
                 reference_lookup["participants"].setdefault(participant.name, participant)
 
+        ## TODO: replace building to room
         places = ref_data.get("places", set())
         if places:
             buildings = {building for building, _ in places}

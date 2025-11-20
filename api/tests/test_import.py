@@ -13,7 +13,10 @@ from api.models import (
     TimeSlot
 )
 
-class TestImportAPI(TestCase):
+"""py manage.py test api.tests.test_import
+"""
+
+class TestImportAPI(TestCase):   
     TEST_JSON = """
     {
         "title": "Учебные занятия 4 курса ФЭВТ на 2 семестр 2024-2025 учебного года",

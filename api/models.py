@@ -54,9 +54,9 @@ class TimeSlot(CommonModel):
         verbose_name = "Время проведения события"
         verbose_name_plural = "Времена проведения события"
 
-    alt_name = models.TextField(null=True, verbose_name="Академ. часы пары")
+    alt_name = models.TextField(blank=True, null=True, verbose_name="Академ. часы пары")
     start_time = models.TimeField(verbose_name="Время начала")
-    end_time = models.TimeField(null=True, verbose_name="Время окончания")
+    end_time = models.TimeField(blank=True, null=True, verbose_name="Время окончания")
 
     def clean(self):
         if self.end_time and self.end_time <= self.start_time:
@@ -74,7 +74,7 @@ class EventPlace(CommonModel):
         verbose_name = "Место проведения события"
         verbose_name_plural = "Места проведения события"
 
-    building = models.CharField(blank=True, max_length=128, verbose_name="Корпус")
+    building = models.CharField(blank=True, default="", db_default="", max_length=128, verbose_name="Корпус")
     room = models.CharField(max_length=64, verbose_name="Аудитория")
 
     def __repr__(self):

@@ -125,18 +125,16 @@ class PlaceFilter(UtilityFilterBase):
             for r in repr:
                 building, room = Utilities.normalize_place_repr(r)
 
-                if building:
-                    buildings.append(building)
+                buildings.append(building)
                 rooms.append(room)
 
             if buildings:
                 fitler_ = cls.by_building(buildings)
             fitler_.update(cls.by_room(rooms))
         else:
-            building, room = Utilities.normalize_place_repr(r)
+            building, room = Utilities.normalize_place_repr(repr)
             
-            if building:
-                fitler_ = cls.by_building(building)
+            fitler_ = cls.by_building(building)
             fitler_.update(cls.by_room(room))
 
         return fitler_
@@ -186,7 +184,7 @@ class SubjectFilter(UtilityFilterBase):
 class TimeSlotFilter(UtilityFilterBase):
     @classmethod
     def by_repr_event_relative(cls, repr : str|list[str]):
-        """Only for work with Event model fields
+        """Only for work with Event model TimeSlot field.
 
         Use list of time slots repr for OR behaviour
         """
@@ -198,25 +196,114 @@ class TimeSlotFilter(UtilityFilterBase):
 
         return filter_
 
-    @staticmethod
-    def by_repr(repr : str|list[str]):
-        """
+    @classmethod
+    def by_repr(cls, repr : str|list[str]) -> dict|None:
+        """Gives filter query for TimeSlot by it start_time (firstly) OR alt_name (secondly)
+
+        Correctly works with repr in next formats:
+            \d-\d for alt name
+            HH:MM for start time
+            HH:MM HH:MM for start and end times
 
         Use list of time slots repr for OR behaviour
+
+        Returns filter query for only one of start_time OR alt_name repr (!)
+
+        Returns None when cannot create filter query from given repr
         """
 
-        REG_EX = r"\d{1,2}\D+\d{1,2}"
-
-        if type(repr) is list:
-            alt_names = []
+        ## TODO: remove _
+        # making query from start time should be first
+        # to prevent problem in some situations
+        # e.g. 8:30-10.00
+        filter_query_from_start_times, _ = cls.by_start_time(repr)
         
-            for r in repr:
-                alt_names.append(re.search(REG_EX, r)[0])
+        if filter_query_from_start_times:
+            return filter_query_from_start_times
+        
+        ## TODO: remove _
+        filter_query_from_alt_names, _ = cls.by_alt_name(repr)    
 
-            return {"alt_name__in" : alt_names}
-
-        return {"alt_name" : re.search(REG_EX, repr)[0]}
+        if filter_query_from_alt_names:
+            return filter_query_from_alt_names
+        
+        return None
     
+    @staticmethod
+    def by_start_time(start_time : str|list[str]) -> tuple[dict, list]:
+        """Makes filter query for TimeSlot using it start_time. 
+        start_time must be in format: HH:MM (only colon separator acceptable)
+
+        Use list of time slots start_time for OR behaviour
+
+        Method can handle start_time combined with end_time ("8:30 10:00"). Result will be the same
+
+        Returns a dict of filter queries and list of strings, that cannot be used for filtering by start_time
+        """
+
+        # 9:00
+        # 13:01
+        START_TIME_REG_EX = r"\d{1,2}\:{1}\d{2}"
+
+        matches = []
+
+        if type(start_time) is list:
+            start_time_list = start_time
+        else:
+            start_time_list = [start_time]
+
+        for time in list(start_time_list):
+            match_ = re.search(START_TIME_REG_EX, time)
+
+            if match_:
+                matches.append(match_[0])
+                start_time_list.remove(time)
+
+        if matches:
+            if len(matches) == 1:
+                return {"start_time__contains" : matches[0]}, start_time_list
+            
+            return {"start_time__in" : matches}, start_time_list
+
+        return {}, start_time_list
+
+    @staticmethod
+    def by_alt_name(alt_name : str|list[str]) -> tuple[dict, list]:
+        """Makes filter query for TimeSlot using it alt_name
+
+        Use list of time slots alt_names for OR behaviour
+
+        Returns a dict of filter queries and list of strings, that cannot be used for filtering by alt_name
+        """
+
+        # 11-12
+        # 10-15
+        # 0-0
+        # 9-8
+        ALT_NAME_REG_EX = r"\d{1,2}\-+\d{1,2}"
+
+        matches = []
+
+        if type(alt_name) is list:
+            alt_names_list = alt_name
+        else:
+            alt_names_list = [alt_name]
+
+        for name in list(alt_names_list):
+            match_ = re.search(ALT_NAME_REG_EX, name)
+
+            if match_:
+                matches.append(match_[0])
+                alt_names_list.remove(name)
+
+        if matches:
+            if len(matches) == 1:
+                return {"alt_name" : matches[0]}, alt_names_list
+            
+            return {"alt_name__in" : matches}, alt_names_list
+
+        return {}, alt_names_list
+
 
 class KindFilter(UtilityFilterBase):
     """Only for work with Event model fields
