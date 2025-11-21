@@ -66,23 +66,23 @@ class TestUtilities(TestCase):
         )
 
     def test_normalize_time_slot(self):
-        self.assertEqual(
+        self.assertSequenceEqual(
             Utilities.normalize_time_slot_repr("1-2"),
-            "1-2"
+            ("1-2", "", "")
         )
-        self.assertEqual(
+        self.assertSequenceEqual(
             Utilities.normalize_time_slot_repr("13.00"),
-            "13:00"
+            ("", "13:00", "")
         )
-        self.assertEqual(
+        self.assertSequenceEqual(
             Utilities.normalize_time_slot_repr("18:00"),
-            "18:00"
+            ("", "18:00", "")
         )
-        self.assertEqual(
-            Utilities.normalize_time_slot_repr("8:30-10.00"),
-            "8:30 10:00"
+        self.assertSequenceEqual(
+            Utilities.normalize_time_slot_repr("8:30 - 10.00"),
+            ("", "8:30", "10:00")
         )
-        self.assertEqual(
+        self.assertSequenceEqual(
             Utilities.normalize_time_slot_repr("8.30 10:00"),
-            "8:30 10:00"
+            ("", "8:30", "10:00")
         )

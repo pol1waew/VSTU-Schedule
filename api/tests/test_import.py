@@ -1,6 +1,7 @@
 from datetime import datetime
 from django.test import TestCase
 from api.utilities import ImportAPI
+from api.utility_filters import TimeSlotFilter, PlaceFilter
 from api.models import (
     Schedule,
     ScheduleTemplate,
@@ -10,145 +11,19 @@ from api.models import (
     Department,
     Organization,
     AbstractDay,
-    TimeSlot
+    TimeSlot,
+    AbstractEvent,
+    Event,
+    EventPlace
 )
 
 """py manage.py test api.tests.test_import
 """
 
 class TestImportAPI(TestCase):   
-    TEST_JSON = """
-    {
-        "title": "Учебные занятия 4 курса ФЭВТ на 2 семестр 2024-2025 учебного года",
-        "table": {
-            "grid": [
-                {
-                    "subject": "ВКР",
-                    "kind": "лекция",
-                    "participants": {
-                        "teachers": [
-                            "Гилка В.В.",
-                            "Кузнецова А.С."
-                        ],
-                        "student_groups": [
-                            "ИВТ-460"
-                        ]
-                    },
-                    "places": [
-                        "В 902а",
-                        "В 902б"
-                    ],
-                    "hours": [
-                        "1-2",
-                        "3-4"
-                    ],
-                    "week_day_index": 0,
-                    "week": "first_week",
-                    "holds_on_date": [
-                        "09.11.2024"
-                    ]
-                },
-                {
-                    "subject": "МИКРОПРОЦЕССОРЫ",
-                    "kind": "лабораторная работа",
-                    "participants": {
-                        "teachers": [
-                            "Синкевич Д.",
-                            "Дмитриев А.С."
-                        ],
-                        "student_groups": [
-                            "ПрИн-466",
-                            "ПрИн-467"
-                        ]
-                    },
-                    "places": [
-                        "В 903",
-                        "В 908"
-                    ],
-                    "hours": [
-                        "5-6",
-                        "7-8"
-                    ],
-                    "week_day_index": 1,
-                    "week": "second_week",
-                    "holds_on_date": []
-                }
-            ],
-            "datetime": {
-                "weeks": {
-                    "first_week": [
-                        {
-                            "week_day_index": 0,
-                            "calendar": [
-                                {
-                                    "month_index": 0,
-                                    "month_days": [
-                                        "1", 
-                                        "15"
-                                    ]
-                                },
-                                {
-                                    "month_index": 1,
-                                    "month_days": [
-                                        "20", 
-                                        "28"
-                                    ]
-                                }
-                            ]
-                        }
-                    ],
-                    "second_week": [
-                        {
-                            "week_day_index": 0,
-                            "calendar": [
-                                {
-                                    "month_index": 0,
-                                    "month_days": [
-                                        "8", 
-                                        "22"
-                                    ]
-                                }
-                            ]
-                        },
-                        {
-                            "week_day_index": 1,
-                            "calendar": [
-                                {
-                                    "month_index": 0,
-                                    "month_days": [
-                                        "9", 
-                                        "23"
-                                    ]
-                                }
-                            ]
-                        }
-                    ]
-                },
-                "week_days": [
-                    "ПОНЕДЕЛЬНИК",
-                    "ВТОРНИК",
-                    "СРЕДА",
-                    "ЧЕТВЕРГ",
-                    "ПЯТНИЦА",
-                    "СУББОТА"
-                ],
-                "months": [
-                    "февраль",
-                    "март",
-                    "апрель",
-                    "май",
-                    "июнь",
-                    "сентябрь"
-                ]
-            }
-        }
-    }
-
-    """
-
     def setUp(self):
         self.create_abstract_days()
-        self.create_time_slots()
+        #self.create_time_slots()
         self.create_schedule()
 
     def create_abstract_days(self):
@@ -217,12 +92,130 @@ class TestImportAPI(TestCase):
             schedule_template=schedule_template
         )
         
-    def test_test(self):
-        ImportAPI.import_data(self.TEST_JSON)
+    def test_import_data(self):
+        # manualy created TimeSlot
+        TimeSlot.objects.create(alt_name="11-12", start_time=datetime.strptime("17:00:00", "%H:%M:%S"), end_time=datetime.strptime("18:30:00", "%H:%M:%S"))
+
+        with open("testdata/test_import_1.json", "r", encoding="utf8") as data_file:
+            ImportAPI.import_data(data_file.read())
 
         try:
-            gilka = EventParticipant.objects.get(name="Гилка В.В.")
-        except EventParticipant.DoesNotExist:
-            gilka = None
+            self.assertNotEqual(Event.objects.filter(**TimeSlotFilter.by_repr_event_relative("11-12")).first(), None)
+            self.assertNotEqual(Event.objects.filter(**TimeSlotFilter.by_repr_event_relative("11:50")).first(), None)
+            self.assertNotEqual(Event.objects.filter(**TimeSlotFilter.by_repr_event_relative("17:00")).first(), None)
+        except Event.DoesNotExist:
+            self.fail()
 
-        self.assertNotEqual(gilka, None)
+        try:
+            self.assertNotEqual(AbstractEvent.objects.filter(**TimeSlotFilter.by_repr_abstract_event_relative("11-12")).first(), None)
+            self.assertNotEqual(AbstractEvent.objects.filter(**TimeSlotFilter.by_repr_abstract_event_relative("11:50")).first(), None)
+            self.assertNotEqual(AbstractEvent.objects.filter(**TimeSlotFilter.by_repr_abstract_event_relative("17:00")).first(), None)
+            self.assertNotEqual(AbstractEvent.objects.filter(participants__name="Гилка В.В.").first(), None)
+            self.assertNotEqual(AbstractEvent.objects.filter(participants__name="ИВТ-460", participants__role="student").first(), None)
+        except AbstractEvent.DoesNotExist:
+            self.fail()
+
+        try:
+            self.assertNotEqual(TimeSlot.objects.get(**TimeSlotFilter.by_start_time("17:00")[0]), None)
+            self.assertNotEqual(TimeSlot.objects.get(**TimeSlotFilter.by_start_time("10:10")[0]), None)
+        except TimeSlot.DoesNotExist:
+            self.fail()
+
+        try:
+            self.assertNotEqual(EventPlace.objects.get(**PlaceFilter.by_repr("В 902а")), None)
+        except EventPlace.DoesNotExist:
+            self.fail()
+    
+    def test_collect_reference_data(self):
+        INPUT_DATA = [
+            {
+                "subject": "ВКР",
+                "kind": "лекция",
+                "participants": {
+                    "teachers": [
+                        "Гилка В.В.",
+                        "Кузнецова А.С."
+                    ],
+                    "student_groups": [
+                        "ИВТ-460"
+                    ]
+                },
+                "places": [
+                    "В 902а",
+                    "В 902б"
+                ],
+                "hours": [
+                    "1-2",
+                    "3-4"
+                ],
+                "week_day_index": 0,
+                "week": "first_week",
+                "holds_on_date": [
+                    "09.11.2024"
+                ]
+            },
+            {
+				"subject": "МИКРОПРОЦЕССОРЫ",
+				"kind": "лабораторная работа",
+				"participants": {
+					"teachers": [
+						"Синкевич Д.",
+						"Дмитриев А.С."
+					],
+					"student_groups": [
+						"ПрИн-466",
+						"ПрИн-467"
+					]
+				},
+				"places": [
+					"ГУК101",
+					"312"
+				],
+				"hours": [
+					"18.30",
+					"11:11 -  12.01"
+				],
+				"week_day_index": 1,
+				"week": "second_week",
+				"holds_on_date": []
+			}
+        ]
+
+        return_value = ImportAPI._collect_reference_data(INPUT_DATA)
+        
+        self.assertSequenceEqual(
+            return_value,
+            {
+                "subjects" : {"ВКР", "МИКРОПРОЦЕССОРЫ"},
+                "kinds" : {"Лекция", "Лабораторная работа"},
+                "teacher_names" : {"Гилка В.В.", "Кузнецова А.С.", "Синкевич Д.", "Дмитриев А.С."},
+                "group_names" : {"ИВТ-460", "ПрИн-466", "ПрИн-467"},
+                "places" : {("В", "902а"), ("В", "902б"), ("", "ГУК101"), ("", "312")},
+                "time_slots" : {("1-2", "", ""), ("3-4", "", ""), ("", "18:30", ""), ("", "11:11", "12:01")}
+            }
+        )
+
+    def test_ensure_reference_data(self):
+        INPUT_DATA = {
+            "subjects" : set(),
+            "kinds" : set(),
+            "teacher_names" : set(),
+            "group_names" : set(),
+            "places" : set(),
+            "time_slots" : {
+                ("1-2", "8:30", ""),
+                ("", "11:55", ""),
+                ("5-6", "13:40", "15:01"),
+                ("", "15:09", "15:10")
+            }
+        }
+
+        ImportAPI._ensure_reference_data(INPUT_DATA)
+
+        try:
+            self.assertNotEqual(TimeSlot.objects.get(start_time__contains="8:30"), None)
+            self.assertNotEqual(TimeSlot.objects.get(start_time__contains="11:55"), None)
+            self.assertNotEqual(TimeSlot.objects.get(end_time__contains="15:01"), None)
+            self.assertNotEqual(TimeSlot.objects.get(end_time__contains="15:10"), None)
+        except TimeSlot.DoesNotExist:
+            self.fail()

@@ -191,8 +191,22 @@ class TimeSlotFilter(UtilityFilterBase):
 
         filter_ = cls.by_repr(repr)
 
-        for key in filter_.keys():
+        for key in list(filter_.keys()):
             filter_["time_slot_override__{}".format(key)] = filter_.pop(key)
+
+        return filter_
+    
+    @classmethod
+    def by_repr_abstract_event_relative(cls, repr : str|list[str]):
+        """Only for work with AbstractEvent model TimeSlot field.
+
+        Use list of time slots repr for OR behaviour
+        """
+
+        filter_ = cls.by_repr(repr)
+
+        for key in list(filter_.keys()):
+            filter_["time_slot__{}".format(key)] = filter_.pop(key)
 
         return filter_
 

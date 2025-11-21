@@ -63,10 +63,15 @@ class TimeSlot(CommonModel):
             raise ValidationError("Время проведения не корректно")
 
     def __repr__(self):
-        res = self.start_time.strftime("%H:%M")
+        res = self.start_time.strftime("%H:%M").removeprefix("0")
+
         if self.end_time:
             res += "-{}".format(self.end_time.strftime("%H:%M"))
-        return f"{self.alt_name}ч. / {res}"
+        
+        if self.alt_name:
+            return f"{self.alt_name}ч. / {res}"
+        else:
+            return f"{res}"
 
 
 class EventPlace(CommonModel):
@@ -425,7 +430,7 @@ class AbstractEvent(CommonModel):
     participants = models.ManyToManyField(EventParticipant, verbose_name="Участники")
     places = models.ManyToManyField(EventPlace, verbose_name="Места")
     abstract_day = models.ForeignKey(AbstractDay, on_delete=models.PROTECT, verbose_name="Абстрактный день")
-    time_slot = models.ForeignKey(TimeSlot, on_delete=models.PROTECT, verbose_name="Временной интервал")
+    time_slot = models.ForeignKey(TimeSlot, on_delete=models.PROTECT, verbose_name="Временной интервал") # null=True, blank=True
     # for many dates should create many AbstractEvents
     holds_on_date = models.DateField(null=True, blank=True, verbose_name="Проводится только в заданный день")
     schedule = models.ForeignKey(Schedule, null=True, on_delete=models.CASCADE, related_name="events", verbose_name="Расписание")

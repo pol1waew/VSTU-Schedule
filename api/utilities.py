@@ -158,7 +158,7 @@ class Utilities:
         return "", place
 
     @staticmethod
-    def normalize_time_slot_repr(time_slot_repr : str) -> str|None:
+    def normalize_time_slot_repr(time_slot_repr : str) -> tuple[str, str, str]|None:
         """Take time slot and convert it into acceptable format
 
         Time slot must be present
@@ -166,10 +166,8 @@ class Utilities:
             as start time: HH:MM or HH.MM
             as start and end times: START_TIME-END_TIME or START_TIME END_TIME
 
-        Returns time slot in format:
-            \d-\d for alt name
-            HH:MM for start time
-            HH:MM HH:MM for start and end times
+        Returns time slot structured as (ALT_NAME, START_TIME, END_TIME) 
+        and formated as (\d-\d HH:MM HH:MM). Empty values equals ''
         """
 
         # 1-2
@@ -189,12 +187,17 @@ class Utilities:
         match_ = re.search(ALT_NAME_REG_EX, time_slot)
 
         if match_:
-            return match_[0]
+            return match_[0], "", ""
         
         time_slot = time_slot.replace(".", ":")
-        time_slot = time_slot.replace("-", " ")
+
+        for separator in ["-", " "]:
+            if separator in time_slot:
+                start_time, end_time = time_slot.split(separator, 1)
+
+                return "", start_time.strip(), end_time.strip()
         
-        return time_slot
+        return "", time_slot, ""
 
     @staticmethod
     def get_month_number(name : str):
@@ -259,45 +262,63 @@ class ImportAPI:
 
     @classmethod
     def _collect_reference_data(cls, entries) -> dict:
-        subjects: set[str] = set()
-        kinds: set[str] = set()
-        teacher_names: set[str] = set()
-        group_names: set[str] = set()
-        places: set[tuple[str, str]] = set()
+        """Collects data from all entries in imported JSON
+        """
+        
+        subjects : set[str] = set()
+        kinds : set[str] = set()
+        teacher_names : set[str] = set()
+        group_names : set[str] = set()
+        places : set[tuple[str, str]] = set()
+        time_slots : set[str] = set()
 
         for entry in entries:
             subjects.add(cls._normalize_subject_name(entry["subject"]))
             kinds.add(cls._normalize_kind_name(entry["kind"]))
 
             for teacher_name in entry.get("participants", {}).get("teachers", []):
-                normalized = cls._normalize_participant_name(teacher_name)
-                if normalized:
-                    teacher_names.add(normalized)
+                normalized_teacher_name = cls._normalize_participant_name(teacher_name)
+
+                if normalized_teacher_name:
+                    teacher_names.add(normalized_teacher_name)
 
             for group_name in entry.get("participants", {}).get("student_groups", []):
-                normalized = cls._normalize_participant_name(group_name)
-                if normalized:
-                    group_names.add(normalized)
+                normalized_group_name = cls._normalize_participant_name(group_name)
+
+                if normalized_group_name:
+                    group_names.add(normalized_group_name)
 
             for place_repr in entry.get("places", []):
                 normalized_place = Utilities.normalize_place_repr(place_repr)
+
                 if normalized_place:
                     places.add(normalized_place)
 
+            for time_slot_repr in entry.get("hours", []):
+                normalized_time_slot = Utilities.normalize_time_slot_repr(time_slot_repr)
+
+                if normalized_time_slot:
+                    time_slots.add(normalized_time_slot)
+
+
         return {
-            "subjects": subjects,
-            "kinds": kinds,
-            "teacher_names": teacher_names,
-            "group_names": group_names,
-            "places": places,
+            "subjects" : subjects,
+            "kinds" : kinds,
+            "teacher_names" : teacher_names,
+            "group_names" : group_names,
+            "places" : places,
+            "time_slots" : time_slots
         }
 
     @classmethod
-    def _ensure_reference_data(cls, ref_data: dict) -> None:
-        if not ref_data:
+    def _ensure_reference_data(cls, reference_data : dict) -> None:
+        """Creates models for non-existing inside database JSON data
+        """
+        
+        if not reference_data:
             return
 
-        subjects = ref_data.get("subjects", set())
+        subjects = reference_data.get("subjects", set())
         if subjects:
             existing_subjects = set(
                 Subject.objects.filter(name__in=subjects).values_list("name", flat=True)
@@ -310,7 +331,7 @@ class ImportAPI:
             if new_subjects:
                 Subject.objects.bulk_create(new_subjects)
 
-        kinds = ref_data.get("kinds", set())
+        kinds = reference_data.get("kinds", set())
         if kinds:
             existing_kinds = set(
                 EventKind.objects.filter(name__in=kinds).values_list("name", flat=True)
@@ -323,8 +344,8 @@ class ImportAPI:
             if new_kinds:
                 EventKind.objects.bulk_create(new_kinds)
 
-        teacher_names = ref_data.get("teacher_names", set())
-        group_names = ref_data.get("group_names", set())
+        teacher_names = reference_data.get("teacher_names", set())
+        group_names = reference_data.get("group_names", set())
         all_participant_names = teacher_names | group_names
 
         if all_participant_names:
@@ -341,6 +362,7 @@ class ImportAPI:
                         name=name,
                         role=EventParticipant.Role.TEACHER,
                         is_group=False,
+                        # TODO: add department
                     )
                 )
 
@@ -352,13 +374,14 @@ class ImportAPI:
                         name=name,
                         role=EventParticipant.Role.STUDENT,
                         is_group=True,
+                        # TODO: add department
                     )
                 )
 
             if new_participants:
                 EventParticipant.objects.bulk_create(new_participants)
 
-        places = ref_data.get("places", set())
+        places = reference_data.get("places", set())
         if places:
             rooms = {room for _, room in places}
 
@@ -377,6 +400,41 @@ class ImportAPI:
 
             if new_places:
                 EventPlace.objects.bulk_create(new_places)
+
+        time_slots = reference_data.get("time_slots", set())
+        if time_slots:
+            filter_by_start_time, left_time_slots = filters.TimeSlotFilter.by_start_time([time_slot[1] for time_slot in time_slots])
+            
+            if filter_by_start_time:
+                existing_time_slots = set(
+                    TimeSlot.objects.filter(**filter_by_start_time).values_list("start_time")
+                )
+            else:
+                existing_time_slots = set()
+
+            # At this moment, we not auto creating TimeSlots from alt_names
+            """
+            if left_time_slots:
+                filter_by_alt_name, _ = filters.TimeSlotFilter.by_alt_name(left_time_slots)
+
+                if filter_by_alt_name:
+                    existing_time_slots.update(set(
+                        TimeSlot.objects.filter(**filter_by_alt_name).values_list("alt_name", "start_time")
+                    ))
+            """
+            
+            new_time_slots = [
+                TimeSlot(
+                    alt_name=alt_name, 
+                    start_time=datetime.strptime(start_time, "%H:%M"), 
+                    end_time=datetime.strptime(end_time, "%H:%M") if end_time else None
+                )
+                for alt_name, start_time, end_time in time_slots
+                if start_time and start_time not in existing_time_slots
+            ]
+
+            if new_time_slots:
+                TimeSlot.objects.bulk_create(new_time_slots)
 
     @classmethod
     def import_data(cls, data_file : str):
@@ -482,10 +540,11 @@ class ImportAPI:
     @classmethod
     def _build_reference_lookup(cls, ref_data: dict) -> dict:
         reference_lookup = {
-            "subjects": {},
-            "kinds": {},
-            "participants": {},
-            "places": {},
+            "subjects" : {},
+            "kinds" : {},
+            "participants" : {},
+            "places" : {},
+            "time_slots" : QuerySet
         }
 
         subjects = ref_data.get("subjects", set())
@@ -509,18 +568,35 @@ class ImportAPI:
             for participant in participants_qs:
                 reference_lookup["participants"].setdefault(participant.name, participant)
 
-        ## TODO: replace building to room
         places = ref_data.get("places", set())
         if places:
-            buildings = {building for building, _ in places}
-            if buildings:
-                place_queryset = EventPlace.objects.filter(building__in=buildings)
-            else:
-                place_queryset = EventPlace.objects.none()
+            rooms = {room for _, room in places}
 
-            reference_lookup["places"] = {
-                (place.building, place.room): place for place in place_queryset
-            }
+            if rooms:
+                place_queryset = EventPlace.objects.filter(room__in=rooms)
+
+                reference_lookup["places"] = {
+                    (place.building, place.room) : place for place in place_queryset
+                }
+
+        time_slots = ref_data.get("time_slots", set())
+        if time_slots:
+            start_times = {start_time for _, start_time, _ in time_slots if start_time}
+            alt_names = {alt_name for alt_name, start_time, _ in time_slots if not start_time}
+                        
+            if start_times:
+                reference_lookup["time_slots"] = TimeSlot.objects.filter(start_time__in=start_times)
+
+            if alt_names:
+                reference_lookup["time_slots"] |= TimeSlot.objects.filter(alt_name__in=alt_names)
+
+            # reference_lookup["time_slots"].update({
+            #     (
+            #         time_slot.alt_name, 
+            #         time_slot.start_time.strftime("%H:%M").removeprefix("0"), 
+            #         time_slot.end_time.strftime("%H:%M").removeprefix("0") if time_slot.end_time else ""
+            #     ) : time_slot for time_slot in time_slot_queryset_from_start_times | time_slot_queryset_from_alt_names
+            # })
 
         return reference_lookup
 
@@ -572,6 +648,7 @@ class ImportAPI:
         missing_places = []
         for place_repr in entry.get("places", []):
             normalized_place = Utilities.normalize_place_repr(place_repr)
+
             if not normalized_place:
                 continue
 
@@ -591,10 +668,26 @@ class ImportAPI:
             name__endswith=week_days[week_day_index].capitalize()
         )
 
-        time_slots = TimeSlot.objects.filter(**filters.TimeSlotFilter.by_repr(entry["hours"]))
-        if not time_slots.exists():
+        time_slots = []
+        missing_time_slots = []
+        for time_slot_repr in entry.get('hours', []):
+            normalized_time_slot = Utilities.normalize_time_slot_repr(time_slot_repr)
+
+            if not normalized_time_slot:
+                continue
+            
+            time_slot = reference_lookup["time_slots"].get(
+                **filters.TimeSlotFilter.by_repr(normalized_time_slot[1] if normalized_time_slot[1] else normalized_time_slot[0])
+            )
+
+            if time_slot:
+                time_slots.append(time_slot)
+            else:
+                missing_time_slots.append(time_slot_repr)
+
+        if missing_time_slots:
             raise TimeSlot.DoesNotExist(
-                f"Не найден учебный час для значений: {', '.join(map(str, entry.get('hours', [])))}"
+                f"Не найден учебный час для значений: {', '.join(missing_time_slots)}"
             )
         
         holds_on_date_values = entry.get("holds_on_date") or []
