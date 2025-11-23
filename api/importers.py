@@ -1,16 +1,17 @@
+import json
+from api.utilities import Utilities
 from rest_framework.exceptions import ValidationError
-
 from api.models import (
+    EventPlace,
     Event,
     EventKind,
     EventParticipant,
-    EventPlace,
     Schedule,
     Subject,
     TimeSlot,
 )
 
-
+# TODO: remove old logic
 class JSONImporter:
     """
     Описание формата следует смотреть в классе ImportJSONAPIView в файле views.py
@@ -137,3 +138,37 @@ class JSONImporter:
             unique_fields=["idnumber"],
             update_fields=["subject", "kind", "schedule"],
         )
+
+
+class EventImporter:
+    pass
+
+
+class ReferenceImporter:
+    @staticmethod
+    def import_place_reference(reference_data : str):
+        json_data = json.loads(reference_data)
+
+        all_normalized_places = []
+
+        for place in json_data["places"]:
+            normalized_place = Utilities.normalize_place_repr(place)
+
+            if not normalized_place in all_normalized_places:
+                all_normalized_places.append(normalized_place)
+
+        places_to_create = []
+
+        for place in all_normalized_places:
+            places_to_create.append(
+                EventPlace(
+                    building=place[0],
+                    room=place[1]
+                )
+            )
+
+        EventPlace.objects.bulk_create(places_to_create)
+
+    @staticmethod
+    def import_participant_reference():
+        pass

@@ -6,7 +6,7 @@ from django.utils.safestring import SafeText
 from datetime import datetime, date, timedelta
 import api.utility_filters as filters
 from itertools import islice
-import xlsxwriter
+import xlsxwriter # TODO: replace with openpyxl
 import io
 import json
 import re
@@ -245,7 +245,7 @@ class Utilities:
         return MONTH_NAMES[month_number - 1] if month_number >= 1 and month_number <= 12 else None
 
 
-class ImportAPI:
+class EventImportAPI:
     SUBJECT_NORMALIZATION_CAPITALIZE = False
 
     @staticmethod
@@ -437,13 +437,13 @@ class ImportAPI:
                 TimeSlot.objects.bulk_create(new_time_slots)
 
     @classmethod
-    def import_data(cls, data_file : str):
-        """Reads data from given file and fill database with new Events
+    def import_event_data(cls, event_data : str):
+        """Reads data from given file and fill database with new AbstractEvents and Events
         """
         
-        json_data = json.loads(data_file)
+        json_data = json.loads(event_data)
         
-        cls.make_import(
+        cls.make_event_import(
             json_data["title"],
             json_data["table"]["grid"],
             json_data["table"]["datetime"]["weeks"],
@@ -452,7 +452,7 @@ class ImportAPI:
         )
     
     @classmethod
-    def make_import(cls, title : str, entries, weeks, week_days : list[str], months : list[str]):
+    def make_event_import(cls, title : str, entries, weeks, week_days : list[str], months : list[str]):
         """Applies data from loaded JSON on database
         """
         

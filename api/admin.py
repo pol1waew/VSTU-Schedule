@@ -1,4 +1,5 @@
-from api.utilities import Utilities, ReadAPI, WriteAPI, ImportAPI
+from api.utilities import Utilities, ReadAPI, WriteAPI, EventImportAPI
+from api.importers import ReferenceImporter
 import api.utility_filters as filters
 from django.contrib import admin, messages
 from django.contrib.admin.actions import delete_selected
@@ -54,9 +55,20 @@ class EventParticipantAdmin(BaseAdmin):
 
 @admin.register(EventPlace)
 class EventPlaceAdmin(BaseAdmin):
+    change_list_template = "../templates/eventPlace.html"
     list_display = ("building", "room")
     search_fields = ("building", "room")
     list_filter = ("building",)
+
+    def get_urls(self):
+        return [path("import_place_reference/", self.import_data)] + super().get_urls()
+
+    def import_data(self, request):
+        if request.method == "POST" and request.FILES.get("selected_reference_file"):
+            ReferenceImporter.import_place_reference(request.FILES['selected_reference_file'].read())
+            messages.success(request, "Импорт успешно произведён")
+
+        return HttpResponseRedirect("../")
 
 
 @admin.register(EventKind)
@@ -222,9 +234,9 @@ class AbstractEventAdmin(BaseAdmin):
 
     def import_data(self, request):
         if request.method == "POST" and request.FILES.get("selected_file"):
-            messages.success(request, "Импорт успешно произведён")
             ## TODO: when working with big files should use chunks() instead
-            ImportAPI.import_data(request.FILES['selected_file'].read())
+            EventImportAPI.import_event_data(request.FILES['selected_file'].read())
+            messages.success(request, "Импорт успешно произведён")
 
         return HttpResponseRedirect("../")
 

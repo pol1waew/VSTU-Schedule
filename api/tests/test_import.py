@@ -1,6 +1,7 @@
 from datetime import datetime
 from django.test import TestCase
-from api.utilities import ImportAPI
+from api.importers import EventImporter, ReferenceImporter
+from api.utilities import EventImportAPI
 from api.utility_filters import TimeSlotFilter, PlaceFilter
 from api.models import (
     Schedule,
@@ -20,7 +21,7 @@ from api.models import (
 """py manage.py test api.tests.test_import
 """
 
-class TestImportAPI(TestCase):   
+class TestEventImporter(TestCase):   
     def setUp(self):
         self.create_abstract_days()
         #self.create_time_slots()
@@ -97,7 +98,7 @@ class TestImportAPI(TestCase):
         TimeSlot.objects.create(alt_name="11-12", start_time=datetime.strptime("17:00:00", "%H:%M:%S"), end_time=datetime.strptime("18:30:00", "%H:%M:%S"))
 
         with open("testdata/test_import_1.json", "r", encoding="utf8") as data_file:
-            ImportAPI.import_data(data_file.read())
+            EventImportAPI.import_event_data(data_file.read())
 
         try:
             self.assertNotEqual(Event.objects.filter(**TimeSlotFilter.by_repr_event_relative("11-12")).first(), None)
@@ -181,7 +182,7 @@ class TestImportAPI(TestCase):
 			}
         ]
 
-        return_value = ImportAPI._collect_reference_data(INPUT_DATA)
+        return_value = EventImportAPI._collect_reference_data(INPUT_DATA)
         
         self.assertSequenceEqual(
             return_value,
@@ -210,7 +211,7 @@ class TestImportAPI(TestCase):
             }
         }
 
-        ImportAPI._ensure_reference_data(INPUT_DATA)
+        EventImportAPI._ensure_reference_data(INPUT_DATA)
 
         try:
             self.assertNotEqual(TimeSlot.objects.get(start_time__contains="8:30"), None)
@@ -218,4 +219,48 @@ class TestImportAPI(TestCase):
             self.assertNotEqual(TimeSlot.objects.get(end_time__contains="15:01"), None)
             self.assertNotEqual(TimeSlot.objects.get(end_time__contains="15:10"), None)
         except TimeSlot.DoesNotExist:
+            self.fail()
+
+class TestReferenceImporter(TestCase):
+    def test_place_import_reference(self):
+        PLACE_REFERENCE_DATA = """
+            {
+                "places": [
+                    "002",
+                    "КЦ УНЦ",
+                    "В-1402-3",
+                    "Б-205а",
+                    "ГУК101"
+                ]
+            }
+        """
+
+        ReferenceImporter.import_place_reference(PLACE_REFERENCE_DATA)
+
+        try:
+            self.assertNotEqual(EventPlace.objects.get(**PlaceFilter.by_repr("002")), None)
+            self.assertNotEqual(EventPlace.objects.get(**PlaceFilter.by_repr("КЦ УНЦ")), None)
+            self.assertNotEqual(EventPlace.objects.get(**PlaceFilter.by_repr("В-1402-3")), None)
+            self.assertNotEqual(EventPlace.objects.get(**PlaceFilter.by_repr("Б-205а")), None)
+            self.assertNotEqual(EventPlace.objects.get(**PlaceFilter.by_repr("ГУК101")), None)
+        except EventPlace.DoesNotExist:
+            self.fail()
+
+    def test_import_same_place_reference(self):
+        PLACE_REFERENCE_DATA = """
+            {
+                "places": [
+                    "В-902а",
+                    "В 902а",
+                    "В,902а"
+                ]
+            }
+        """
+
+        ReferenceImporter.import_place_reference(PLACE_REFERENCE_DATA)
+
+        try:
+            self.assertEqual(EventPlace.objects.all().count(), 1)
+            self.assertNotEqual(EventPlace.objects.get(building="В", room="902а"), None)
+        except EventPlace.DoesNotExist:
             self.fail()

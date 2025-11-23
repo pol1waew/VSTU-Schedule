@@ -431,4 +431,4 @@ class ObtainAPIUserToken(ObtainAuthToken):
 
 
 def index(request):
-    return redirect("/api", False)
+    return redirect("/visualization", False)
