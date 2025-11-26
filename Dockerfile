@@ -1,5 +1,5 @@
 # Multi-stage build для оптимизации размера образа
-FROM python:3.13-slim as builder
+FROM python:3.13-slim AS builder
 
 # Установка зависимостей для сборки
 RUN apt-get update && apt-get install -y --no-install-recommends \
