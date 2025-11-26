@@ -28,6 +28,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = getenv("ALLOWED_HOSTS", "").split(",")
 
+STATIC_ROOT= BASE_DIR / "staticfiles"
+STATIC_URL = "/static/"
 
 # Application definition
 
@@ -83,12 +85,24 @@ WSGI_APPLICATION = "vstu_schedule.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+if getenv("USE_SQLITE", "false").lower() == "true":
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": getenv("POSTGRES_DB", "django_db"),
+            "USER": getenv("POSTGRES_USER", "django_user"),
+            "PASSWORD": getenv("POSTGRES_PASSWORD", "change_me_in_production"),
+            "HOST": getenv("POSTGRES_HOST", "db"),  # 'db' - имя сервиса в docker-compose
+            "PORT": getenv("POSTGRES_PORT", "5432"),
+        }
+    }
 
 
 # Password validation

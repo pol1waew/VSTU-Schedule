@@ -5,3 +5,5 @@ drf-redesign
 Markdown
 django_extensions
 xlsxwriter
+gunicorn
+psycopg[binary]

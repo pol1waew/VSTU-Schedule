@@ -37,9 +37,12 @@ RUN useradd -m -u 1000 django && chown -R django:django /app
 # Копирование кода приложения
 COPY --chown=django:django . .
 
-# Создание директорий для статики и медиа
-RUN mkdir -p /app/static /app/media && \
-    chown -R django:django /app/static /app/media
+# Установка рабочей директории и создание директорий
+RUN mkdir -p /app/static /app/media /app/staticfiles \
+    && chown -R django:django /app/static /app/media /app/staticfiles
+
+# Установка владельца ПЕРЕД копированием
+RUN chown -R django:django /app
 
 # Переключение на непривилегированного пользователя
 USER django
@@ -48,9 +51,6 @@ USER django
 ENV PATH="/opt/venv/bin:$PATH"
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
-
-# Сборка статики (можно перенести в entrypoint.sh)
-RUN python manage.py collectstatic --noinput || true
 
 # Порт для gunicorn
 EXPOSE 8000
