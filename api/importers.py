@@ -3,11 +3,14 @@ from api.utilities import Utilities
 from rest_framework.exceptions import ValidationError
 from api.models import (
     EventPlace,
+    Department,
+    Organization,
+    EventParticipant,
+    Subject,
+
     Event,
     EventKind,
-    EventParticipant,
     Schedule,
-    Subject,
     TimeSlot,
 )
 
@@ -167,8 +170,130 @@ class ReferenceImporter:
                 )
             )
 
-        EventPlace.objects.bulk_create(places_to_create)
+        if places_to_create:
+            EventPlace.objects.bulk_create(places_to_create)
 
     @staticmethod
-    def import_participant_reference():
-        pass
+    def import_subject_reference(reference_data : str):
+        json_data = json.loads(reference_data)
+
+        subjects_to_create = []
+
+        for entry in json_data:
+            subjects_to_create.append(
+                Subject(name=entry["discipline_name"])
+            )
+        
+        if subjects_to_create:
+            Subject.objects.bulk_create(subjects_to_create)
+
+    @staticmethod
+    def import_faculty_reference(reference_data : str):
+        json_data = json.loads(reference_data)
+
+        # TODO: looking baad
+        organization = Organization.objects.get(name="ВолгГТУ")
+        faculties_to_create = []
+
+        for entry in json_data:
+            faculties_to_create.append(
+                Department(
+                    name=entry["faculty_fullname"],
+                    shortname=entry["faculty_shortname"],
+                    code=entry["faculty_id"],
+                    parent_department=None,
+                    organization=organization
+                )
+            )
+        
+        if faculties_to_create:
+            Department.objects.bulk_create(faculties_to_create)
+
+    @staticmethod
+    def import_department_reference(reference_data : str):
+        json_data = json.loads(reference_data)
+
+        # TODO: looking baad
+        organization = Organization.objects.get(name="ВолгГТУ")
+        departments_to_create = []
+
+        for entry in json_data:
+            try:
+                parent_department = Department.objects.get(code=entry["faculty_id"])
+            except Department.DoesNotExist:
+                parent_department = None
+
+            departments_to_create.append(
+                Department(
+                    name=entry["department_fullname"],
+                    shortname=entry["department_shortname"],
+                    code=entry["department_code"],
+                    parent_department=parent_department,
+                    organization=organization
+                )
+            )
+        
+        if departments_to_create:
+            Department.objects.bulk_create(departments_to_create)
+
+    @staticmethod
+    def import_teacher_reference(reference_data : str):
+        """
+
+        Creates EventParticipant (teacher) even Department not found
+        """
+
+        json_data = json.loads(reference_data)
+
+        teachers_to_create = []
+
+        for entry in json_data:
+            try:
+                department = Department.objects.get(code=entry["staff_department_code"])
+            except Department.DoesNotExist:
+                department = None
+
+            teachers_to_create.append(
+                EventParticipant(
+                    name="{surname} {name}{patronymic}".format(
+                        surname=entry["staff_surname"],
+                        name=f"{entry["staff_name"][0]}." if entry["staff_name"] else "",
+                        patronymic=f"{entry["staff_patronymic"][0]}." if entry["staff_patronymic"] else ""
+                    ),
+                    role=EventParticipant.Role.TEACHER, ## TODO: assistant
+                    is_group=False,
+                    department=department
+                )
+            )
+        
+        if teachers_to_create:
+            EventParticipant.objects.bulk_create(teachers_to_create)
+
+    @staticmethod
+    def import_student_reference(reference_data : str):
+        """
+
+        Creates EventParticipant (teacher) even Department not found
+        """
+        
+        json_data = json.loads(reference_data)
+
+        students_to_create = []
+
+        for entry in json_data:
+            try:
+                department = Department.objects.get(code=entry["faculty_id"])
+            except Department.DoesNotExist:
+                department = None
+
+            students_to_create.append(
+                EventParticipant(
+                    name=entry["group_name"],
+                    role=EventParticipant.Role.STUDENT,
+                    is_group=True,
+                    department=department
+                )
+            )
+        
+        if students_to_create:
+            EventParticipant.objects.bulk_create(students_to_create)

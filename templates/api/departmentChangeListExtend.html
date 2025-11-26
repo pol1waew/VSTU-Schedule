@@ -1,0 +1,26 @@
+{% extends "admin/change_list.html" %}
+
+{% block object-tools %}
+    <div>
+        <div>
+            <form method="POST" enctype="multipart/form-data" action="import_faculty_reference/">
+                {% csrf_token %}
+                
+                <input type="file" name="faculty_reference_file" required>  
+
+                <button type="submit">Импортировать факультеты из файла</button>
+            </form>
+        </div>
+        <div>
+            <form method="POST" enctype="multipart/form-data" action="import_department_reference/">
+                {% csrf_token %}
+                
+                <input type="file" name="department_reference_file" required>  
+
+                <button type="submit">Импортировать подразделения из файла</button>
+            </form>
+        </div>
+    </div>
+    <br />
+    {{ block.super }}
+{% endblock %}

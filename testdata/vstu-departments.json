@@ -1,0 +1,714 @@
+[
+	{
+		"department_id" : "101",
+		"department_code" : "000000129",
+		"department_fullname" : "Кафедра Автоматизация производственных процессов",
+		"department_shortname" : "АПП",
+		"faculty_id" : "101",
+		"faculty_shortname" : "ФАСТиВ"
+	},
+	{
+		"department_id" : "101",
+		"department_code" : "000000130",
+		"department_fullname" : "Кафедра Автоматические установки",
+		"department_shortname" : "АУ",
+		"faculty_id" : "101",
+		"faculty_shortname" : "ФАСТиВ"
+	},
+	{
+		"department_id" : "101",
+		"department_code" : "000000131",
+		"department_fullname" : "Кафедра Детали машин и подъемно-транспортные устройства",
+		"department_shortname" : "ДМ",
+		"faculty_id" : "101",
+		"faculty_shortname" : "ФАСТиВ"
+	},
+	{
+		"department_id" : "105",
+		"department_code" : "000000156",
+		"department_fullname" : "Кафедра Динамика и прочность машин",
+		"department_shortname" : "ДПМ",
+		"faculty_id" : "105",
+		"faculty_shortname" : "ФЭУ"
+	},
+	{
+		"department_id" : "101",
+		"department_code" : "000000133",
+		"department_fullname" : "Кафедра Теоретическая механика",
+		"department_shortname" : "ТеМ",
+		"faculty_id" : "101",
+		"faculty_shortname" : "ФАСТиВ"
+	},
+	{
+		"department_id" : "101",
+		"department_code" : "000000134",
+		"department_fullname" : "Кафедра Технология машиностроения",
+		"department_shortname" : "ТМС",
+		"faculty_id" : "101",
+		"faculty_shortname" : "ФАСТиВ"
+	},
+	{
+		"department_id" : "101",
+		"department_code" : "000000135",
+		"department_fullname" : "Кафедра Транспортные машины и двигатели",
+		"department_shortname" : "ТМД",
+		"faculty_id" : "101",
+		"faculty_shortname" : "ФАСТиВ"
+	},
+	{
+		"department_id" : "102",
+		"department_code" : "000000122",
+		"department_fullname" : "Кафедра Автомобильные перевозки",
+		"department_shortname" : "АП",
+		"faculty_id" : "102",
+		"faculty_shortname" : "ФАТ"
+	},
+	{
+		"department_id" : "102",
+		"department_code" : "000000123",
+		"department_fullname" : "Кафедра Автомобильный транспорт",
+		"department_shortname" : "АТ",
+		"faculty_id" : "102",
+		"faculty_shortname" : "ФАТ"
+	},
+	{
+		"department_id" : "102",
+		"department_code" : "000000132",
+		"department_fullname" : "Кафедра Начертательная геометрия и компьютерная графика",
+		"department_shortname" : "НГиКГ",
+		"faculty_id" : "102",
+		"faculty_shortname" : "ФАТ"
+	},
+	{
+		"department_id" : "102",
+		"department_code" : "000000125",
+		"department_fullname" : "Кафедра Теплотехника и гидравлика",
+		"department_shortname" : "ТиГ",
+		"faculty_id" : "102",
+		"faculty_shortname" : "ФАТ"
+	},
+	{
+		"department_id" : "102",
+		"department_code" : "000000126",
+		"department_fullname" : "Кафедра Техническая эксплуатация и ремонт автомобилей",
+		"department_shortname" : "ТЭРА",
+		"faculty_id" : "102",
+		"faculty_shortname" : "ФАТ"
+	},
+	{
+		"department_id" : "103",
+		"department_code" : "000000138",
+		"department_fullname" : "Кафедра Материаловедение и композиционные материалы",
+		"department_shortname" : "МВ",
+		"faculty_id" : "103",
+		"faculty_shortname" : "ФТКМ"
+	},
+	{
+		"department_id" : "103",
+		"department_code" : "000000139",
+		"department_fullname" : "Кафедра Машины и технология литейного производства",
+		"department_shortname" : "ЛП",
+		"faculty_id" : "103",
+		"faculty_shortname" : "ФТКМ"
+	},
+	{
+		"department_id" : "103",
+		"department_code" : "000000140",
+		"department_fullname" : "Кафедра Оборудование и технология сварочного производства",
+		"department_shortname" : "СП",
+		"faculty_id" : "103",
+		"faculty_shortname" : "ФТКМ"
+	},
+	{
+		"department_id" : "103",
+		"department_code" : "000000124",
+		"department_fullname" : "Кафедра Сопротивление материалов",
+		"department_shortname" : "СМ",
+		"faculty_id" : "103",
+		"faculty_shortname" : "ФТКМ"
+	},
+	{
+		"department_id" : "103",
+		"department_code" : "000000141",
+		"department_fullname" : "Кафедра Технология материалов",
+		"department_shortname" : "ТМ",
+		"faculty_id" : "103",
+		"faculty_shortname" : "ФТКМ"
+	},
+	{
+		"department_id" : "104",
+		"department_code" : "000000144",
+		"department_fullname" : "Кафедра Прикладная математика",
+		"department_shortname" : "ПМ",
+		"faculty_id" : "104",
+		"faculty_shortname" : "ФТПП"
+	},
+	{
+		"department_id" : "104",
+		"department_code" : "000000145",
+		"department_fullname" : "Кафедра Промышленная экология и безопасность жизнедеятельности",
+		"department_shortname" : "ПЭБЖ",
+		"faculty_id" : "104",
+		"faculty_shortname" : "ФТПП"
+	},
+	{
+		"department_id" : "104",
+		"department_code" : "000000146",
+		"department_fullname" : "Кафедра Технологии пищевых производств",
+		"department_shortname" : "ТПП",
+		"faculty_id" : "104",
+		"faculty_shortname" : "ФТПП"
+	},
+	{
+		"department_id" : "104",
+		"department_code" : "000000249",
+		"department_fullname" : "Кафедра Физическое воспитание",
+		"department_shortname" : "ФВ",
+		"faculty_id" : "104",
+		"faculty_shortname" : "ФТПП"
+	},
+	{
+		"department_id" : "105",
+		"department_code" : "000000149",
+		"department_fullname" : "Кафедра Иностранные языки",
+		"department_shortname" : "ИЯ",
+		"faculty_id" : "105",
+		"faculty_shortname" : "ФЭУ"
+	},
+	{
+		"department_id" : "105",
+		"department_code" : "000000150",
+		"department_fullname" : "Кафедра Информационные системы в экономике",
+		"department_shortname" : "ИСЭ",
+		"faculty_id" : "105",
+		"faculty_shortname" : "ФЭУ"
+	},
+	{
+		"department_id" : "105",
+		"department_code" : "000000151",
+		"department_fullname" : "Кафедра История, культура и социология",
+		"department_shortname" : "ИКС",
+		"faculty_id" : "105",
+		"faculty_shortname" : "ФЭУ"
+	},
+	{
+		"department_id" : "105",
+		"department_code" : "000000269",
+		"department_fullname" : "Кафедра Менеджмент и финансы производственных систем",
+		"department_shortname" : "МФПС",
+		"faculty_id" : "105",
+		"faculty_shortname" : "ФЭУ"
+	},
+	{
+		"department_id" : "105",
+		"department_code" : "000000153",
+		"department_fullname" : "Кафедра Мировая экономика и экономическая теория",
+		"department_shortname" : "МЭ",
+		"faculty_id" : "105",
+		"faculty_shortname" : "ФЭУ"
+	},
+	{
+		"department_id" : "105",
+		"department_code" : "000000154",
+		"department_fullname" : "Кафедра Философия и право",
+		"department_shortname" : "ФП",
+		"faculty_id" : "105",
+		"faculty_shortname" : "ФЭУ"
+	},
+	{
+		"department_id" : "105",
+		"department_code" : "000000270",
+		"department_fullname" : "Кафедра Экономика и предпринимательство",
+		"department_shortname" : "ЭиП",
+		"faculty_id" : "105",
+		"faculty_shortname" : "ФЭУ"
+	},
+	{
+		"department_id" : "106",
+		"department_code" : "000000159",
+		"department_fullname" : "Кафедра Высшая математика",
+		"department_shortname" : "ВМ",
+		"faculty_id" : "106",
+		"faculty_shortname" : "ФЭВТ"
+	},
+	{
+		"department_id" : "106",
+		"department_code" : "000000160",
+		"department_fullname" : "Кафедра Вычислительная техника",
+		"department_shortname" : "ВТ",
+		"faculty_id" : "106",
+		"faculty_shortname" : "ФЭВТ"
+	},
+	{
+		"department_id" : "106",
+		"department_code" : "000000165",
+		"department_fullname" : "Кафедра Программное обеспечение автоматизированных систем",
+		"department_shortname" : "ПОАС",
+		"faculty_id" : "106",
+		"faculty_shortname" : "ФЭВТ"
+	},
+	{
+		"department_id" : "106",
+		"department_code" : "000000161",
+		"department_fullname" : "Кафедра Системы автоматизированного проектирования и поискового конструирования",
+		"department_shortname" : "САПР",
+		"faculty_id" : "106",
+		"faculty_shortname" : "ФЭВТ"
+	},
+	{
+		"department_id" : "106",
+		"department_code" : "000000107",
+		"department_fullname" : "Кафедра Физика",
+		"department_shortname" : "КФ",
+		"faculty_id" : "106",
+		"faculty_shortname" : "ФЭВТ"
+	},
+	{
+		"department_id" : "106",
+		"department_code" : "000000163",
+		"department_fullname" : "Кафедра Электронно-вычислительные машины и системы",
+		"department_shortname" : "ЭВМиС",
+		"faculty_id" : "106",
+		"faculty_shortname" : "ФЭВТ"
+	},
+	{
+		"department_id" : "106",
+		"department_code" : "000000164",
+		"department_fullname" : "Кафедра Электротехника",
+		"department_shortname" : "ЭТ",
+		"faculty_id" : "106",
+		"faculty_shortname" : "ФЭВТ"
+	},
+	{
+		"department_id" : "107",
+		"department_code" : "000000168",
+		"department_fullname" : "Кафедра Аналитическая, физическая химия и физико-химия полимеров",
+		"department_shortname" : "ФАХП",
+		"faculty_id" : "107",
+		"faculty_shortname" : "ХТФ"
+	},
+	{
+		"department_id" : "107",
+		"department_code" : "000000169",
+		"department_fullname" : "Кафедра Общая и неорганическая химия",
+		"department_shortname" : "НХ",
+		"faculty_id" : "107",
+		"faculty_shortname" : "ХТФ"
+	},
+	{
+		"department_id" : "107",
+		"department_code" : "000000170",
+		"department_fullname" : "Кафедра Органическая химия",
+		"department_shortname" : "ОХ",
+		"faculty_id" : "107",
+		"faculty_shortname" : "ХТФ"
+	},
+	{
+		"department_id" : "107",
+		"department_code" : "000000171",
+		"department_fullname" : "Кафедра Процессы и аппараты химических и пищевых производств",
+		"department_shortname" : "ПАХПП",
+		"faculty_id" : "107",
+		"faculty_shortname" : "ХТФ"
+	},
+	{
+		"department_id" : "107",
+		"department_code" : "000000174",
+		"department_fullname" : "Кафедра Технология высокомолекулярных и волокнистых материалов",
+		"department_shortname" : "ТВВМ",
+		"faculty_id" : "107",
+		"faculty_shortname" : "ХТФ"
+	},
+	{
+		"department_id" : "107",
+		"department_code" : "000000172",
+		"department_fullname" : "Кафедра Технология органического и нефтехимического синтеза",
+		"department_shortname" : "ТОНС",
+		"faculty_id" : "107",
+		"faculty_shortname" : "ХТФ"
+	},
+	{
+		"department_id" : "107",
+		"department_code" : "000000173",
+		"department_fullname" : "Кафедра Химия и технология переработки эластомеров",
+		"department_shortname" : "ХТПЭ",
+		"faculty_id" : "107",
+		"faculty_shortname" : "ХТФ"
+	},
+	{
+		"department_id" : "108",
+		"department_code" : "000000090",
+		"department_fullname" : "Кафедра Архитектура зданий и сооружений",
+		"department_shortname" : "АЗиС",
+		"faculty_id" : "108",
+		"faculty_shortname" : "ФАГР"
+	},
+	{
+		"department_id" : "108",
+		"department_code" : "000000092",
+		"department_fullname" : "Кафедра Дизайн и монументально-декоративное искусство",
+		"department_shortname" : "ДиМДИ",
+		"faculty_id" : "108",
+		"faculty_shortname" : "ФАГР"
+	},
+	{
+		"department_id" : "108",
+		"department_code" : "000000089",
+		"department_fullname" : "Кафедра Лингвистика и межкультурная коммуникация",
+		"department_shortname" : "ЛиМК",
+		"faculty_id" : "108",
+		"faculty_shortname" : "ФАГР"
+	},
+	{
+		"department_id" : "108",
+		"department_code" : "000000086",
+		"department_fullname" : "Кафедра Управление и развитие городского хозяйства и строительства",
+		"department_shortname" : "УРГХиС",
+		"faculty_id" : "108",
+		"faculty_shortname" : "ФАГР"
+	},
+	{
+		"department_id" : "108",
+		"department_code" : "000000087",
+		"department_fullname" : "Кафедра Урбанистика и теория архитектуры",
+		"department_shortname" : "УиТА",
+		"faculty_id" : "108",
+		"faculty_shortname" : "ФАГР"
+	},
+	{
+		"department_id" : "108",
+		"department_code" : "000000095",
+		"department_fullname" : "Кафедра Физическое воспитание (ИАиС)",
+		"department_shortname" : "ФВИАиС",
+		"faculty_id" : "108",
+		"faculty_shortname" : "ФАГР"
+	},
+	{
+		"department_id" : "108",
+		"department_code" : "000000093",
+		"department_fullname" : "Кафедра Философия, социология и психология",
+		"department_shortname" : "ФСиП",
+		"faculty_id" : "108",
+		"faculty_shortname" : "ФАГР"
+	},
+	{
+		"department_id" : "108",
+		"department_code" : "000000250",
+		"department_fullname" : "Кафедра Цифровые технологии в урбанистике, архитектуре и строительстве",
+		"department_shortname" : "ЦТУАС",
+		"faculty_id" : "108",
+		"faculty_shortname" : "ФАГР"
+	},
+	{
+		"department_id" : "109",
+		"department_code" : "000000109",
+		"department_fullname" : "Кафедра Гидротехнические и земляные сооружения",
+		"department_shortname" : "ГЗС",
+		"faculty_id" : "109",
+		"faculty_shortname" : "ФСиЖКХ"
+	},
+	{
+		"department_id" : "109",
+		"department_code" : "000000294",
+		"department_fullname" : "Кафедра Городского строительства, экономики и управление проектами",
+		"department_shortname" : "ГС",
+		"faculty_id" : "109",
+		"faculty_shortname" : "ФСиЖКХ"
+	},
+	{
+		"department_id" : "109",
+		"department_code" : "000000110",
+		"department_fullname" : "Кафедра Математические и естественнонаучные дисциплины",
+		"department_shortname" : "МиЕД",
+		"faculty_id" : "109",
+		"faculty_shortname" : "ФСиЖКХ"
+	},
+	{
+		"department_id" : "109",
+		"department_code" : "000000111",
+		"department_fullname" : "Кафедра Нефтегазовые сооружения",
+		"department_shortname" : "НГС",
+		"faculty_id" : "109",
+		"faculty_shortname" : "ФСиЖКХ"
+	},
+	{
+		"department_id" : "109",
+		"department_code" : "000000114",
+		"department_fullname" : "Кафедра Строительная механика",
+		"department_shortname" : "СМ",
+		"faculty_id" : "109",
+		"faculty_shortname" : "ФСиЖКХ"
+	},
+	{
+		"department_id" : "109",
+		"department_code" : "000000113",
+		"department_fullname" : "Кафедра Строительные конструкции, основания и надёжность сооружений",
+		"department_shortname" : "СКОиНС",
+		"faculty_id" : "109",
+		"faculty_shortname" : "ФСиЖКХ"
+	},
+	{
+		"department_id" : "109",
+		"department_code" : "000000112",
+		"department_fullname" : "Кафедра Строительные материалы и специальные технологии",
+		"department_shortname" : "СМиСТ",
+		"faculty_id" : "109",
+		"faculty_shortname" : "ФСиЖКХ"
+	},
+	{
+		"department_id" : "109",
+		"department_code" : "000000115",
+		"department_fullname" : "Кафедра Технологии строительного производства",
+		"department_shortname" : "ТСП",
+		"faculty_id" : "109",
+		"faculty_shortname" : "ФСиЖКХ"
+	},
+	{
+		"department_id" : "109",
+		"department_code" : "000000116",
+		"department_fullname" : "Кафедра Экологическое строительство и городское хозяйство",
+		"department_shortname" : "ЭСиГХ",
+		"faculty_id" : "109",
+		"faculty_shortname" : "ФСиЖКХ"
+	},
+	{
+		"department_id" : "109",
+		"department_code" : "000000117",
+		"department_fullname" : "Кафедра Экспертиза и эксплуатация объектов недвижимости",
+		"department_shortname" : "ЭиЭОН",
+		"faculty_id" : "109",
+		"faculty_shortname" : "ФСиЖКХ"
+	},
+	{
+		"department_id" : "110",
+		"department_code" : "000000098",
+		"department_fullname" : "Кафедра Безопасность жизнедеятельности в строительстве и городском хозяйстве",
+		"department_shortname" : "БЖДвСиГХ",
+		"faculty_id" : "110",
+		"faculty_shortname" : "ФТИСиТБ"
+	},
+	{
+		"department_id" : "110",
+		"department_code" : "000000099",
+		"department_fullname" : "Кафедра Водоснабжение и водоотведение",
+		"department_shortname" : "ВиВ",
+		"faculty_id" : "110",
+		"faculty_shortname" : "ФТИСиТБ"
+	},
+	{
+		"department_id" : "110",
+		"department_code" : "000000100",
+		"department_fullname" : "Кафедра Инженерная графика, стандартизация и метрология",
+		"department_shortname" : "ИГСМ",
+		"faculty_id" : "110",
+		"faculty_shortname" : "ФТИСиТБ"
+	},
+	{
+		"department_id" : "110",
+		"department_code" : "000000097",
+		"department_fullname" : "Кафедра Пожарная безопасность и защита в чрезвычайных ситуациях",
+		"department_shortname" : "ПБиЗЧС",
+		"faculty_id" : "110",
+		"faculty_shortname" : "ФТИСиТБ"
+	},
+	{
+		"department_id" : "110",
+		"department_code" : "000000102",
+		"department_fullname" : "Кафедра Строительство и эксплуатация транспортных сооружений",
+		"department_shortname" : "СиЭТС",
+		"faculty_id" : "110",
+		"faculty_shortname" : "ФТИСиТБ"
+	},
+	{
+		"department_id" : "110",
+		"department_code" : "000000104",
+		"department_fullname" : "Кафедра Энергоснабжение, теплотехника, теплогазоснабжение и вентиляция",
+		"department_shortname" : "ЭТТВ",
+		"faculty_id" : "110",
+		"faculty_shortname" : "ФТИСиТБ"
+	},
+	{
+		"department_id" : "119",
+		"department_code" : "000000180",
+		"department_fullname" : "Кафедра Русский язык",
+		"department_shortname" : "РЯ",
+		"faculty_id" : "119",
+		"faculty_shortname" : "ФПИС"
+	},
+	{
+		"department_id" : "200",
+		"department_code" : "000000215",
+		"department_fullname" : "Информатика и технология программирования",
+		"department_shortname" : "ВИТ",
+		"faculty_id" : "200",
+		"faculty_shortname" : "ФЭИ"
+	},
+	{
+		"department_id" : "200",
+		"department_code" : "000000217",
+		"department_fullname" : "Социально-гуманитарные дисциплины",
+		"department_shortname" : "ВСГ",
+		"faculty_id" : "200",
+		"faculty_shortname" : "ФЭИ"
+	},
+	{
+		"department_id" : "200",
+		"department_code" : "000000218",
+		"department_fullname" : "Физическая культура",
+		"department_shortname" : "ВКФ",
+		"faculty_id" : "200",
+		"faculty_shortname" : "ФЭИ"
+	},
+	{
+		"department_id" : "200",
+		"department_code" : "000000214",
+		"department_fullname" : "Химическая технология полимеров и промышленная экология",
+		"department_shortname" : "ВТПЭ",
+		"faculty_id" : "200",
+		"faculty_shortname" : "ФЭИ"
+	},
+	{
+		"department_id" : "200",
+		"department_code" : "000000216",
+		"department_fullname" : "Экономика и менеджмент",
+		"department_shortname" : "ВЭМ",
+		"faculty_id" : "200",
+		"faculty_shortname" : "ФЭИ"
+	},
+	{
+		"department_id" : "201",
+		"department_code" : "000000219",
+		"department_fullname" : "Автоматика, электроника и вычислительная техника",
+		"department_shortname" : "ВАЭиВТ",
+		"faculty_id" : "201",
+		"faculty_shortname" : "ФАМ"
+	},
+	{
+		"department_id" : "201",
+		"department_code" : "000000221",
+		"department_fullname" : "Автомобильный транспорт",
+		"department_shortname" : "ВАТ",
+		"faculty_id" : "201",
+		"faculty_shortname" : "ФАМ"
+	},
+	{
+		"department_id" : "201",
+		"department_code" : "000000224",
+		"department_fullname" : "Механика",
+		"department_shortname" : "ВКМ",
+		"faculty_id" : "201",
+		"faculty_shortname" : "ФАМ"
+	},
+	{
+		"department_id" : "201",
+		"department_code" : "000000293",
+		"department_fullname" : "Механика, физика и математика",
+		"department_shortname" : "ВМФМ",
+		"faculty_id" : "201",
+		"faculty_shortname" : "ФАМ"
+	},
+	{
+		"department_id" : "201",
+		"department_code" : "000000223",
+		"department_fullname" : "Прикладная физика и математика",
+		"department_shortname" : "ВПФМ",
+		"faculty_id" : "201",
+		"faculty_shortname" : "ФАМ"
+	},
+	{
+		"department_id" : "201",
+		"department_code" : "000000225",
+		"department_fullname" : "Строительство, технологические процессы и машины",
+		"department_shortname" : "ВСТПМ",
+		"faculty_id" : "201",
+		"faculty_shortname" : "ФАМ"
+	},
+	{
+		"department_id" : "201",
+		"department_code" : "000000222",
+		"department_fullname" : "Технология и оборудование машиностроительных производств",
+		"department_shortname" : "ВТО",
+		"faculty_id" : "201",
+		"faculty_shortname" : "ФАМ"
+	},
+	{
+		"department_id" : "201",
+		"department_code" : "000000220",
+		"department_fullname" : "Химия, технология и оборудование химических производств",
+		"department_shortname" : "ВХТО",
+		"faculty_id" : "201",
+		"faculty_shortname" : "ФАМ"
+	},
+	{
+		"department_id" : "300",
+		"department_code" : "000000233",
+		"department_fullname" : "Технология текстильного производства",
+		"department_shortname" : "ТТП",
+		"faculty_id" : "300",
+		"faculty_shortname" : "ФПТ"
+	},
+	{
+		"department_id" : "300",
+		"department_code" : "000000231",
+		"department_fullname" : "Электроснабжение промышленных предприятий",
+		"department_shortname" : "ЭПП",
+		"faculty_id" : "300",
+		"faculty_shortname" : "ФПТ"
+	},
+	{
+		"department_id" : "301",
+		"department_code" : "000000236",
+		"department_fullname" : "Автоматизированные системы обработки информации и управления",
+		"department_shortname" : "АСОИУ",
+		"faculty_id" : "301",
+		"faculty_shortname" : "ФЭУиИТ"
+	},
+	{
+		"department_id" : "301",
+		"department_code" : "000000239",
+		"department_fullname" : "Иностранные языки и гуманитарные науки",
+		"department_shortname" : "ИЯиГН",
+		"faculty_id" : "301",
+		"faculty_shortname" : "ФЭУиИТ"
+	},
+	{
+		"department_id" : "303",
+		"department_code" : "000000327",
+		"department_fullname" : "Технология машиностроения",
+		"department_shortname" : "ТМ (КТИ)",
+		"faculty_id" : "303",
+		"faculty_shortname" : "ФВО"
+	},
+	{
+		"department_id" : "303",
+		"department_code" : "000000326",
+		"department_fullname" : "Экономические и гуманитарные науки",
+		"department_shortname" : "ЭиГН",
+		"faculty_id" : "303",
+		"faculty_shortname" : "ФВО"
+	},
+	{
+		"department_id" : "990",
+		"department_code" : "000000228",
+		"department_fullname" : "Информационно-библиотечный центр",
+		"department_shortname" : "ИБЦ",
+		"faculty_id" : "990",
+		"faculty_shortname" : "ВолгГТУ центр"
+	},
+	{
+		"department_id" : "991",
+		"department_code" : "000000329",
+		"department_fullname" : "Информационно-библиотечный центр ИАИС",
+		"department_shortname" : "ИБЦ ИАИС",
+		"faculty_id" : "991",
+		"faculty_shortname" : "ИАиС"
+	},
+	{
+		"department_id" : "110",
+		"department_code" : "000000162",
+		"department_fullname" : "Кафедра Экспериментальная физика",
+		"department_shortname" : "ЭФ",
+		"faculty_id" : "110",
+		"faculty_shortname" : "ФТИСиТБ"
+	}
+]

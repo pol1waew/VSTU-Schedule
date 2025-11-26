@@ -1,0 +1,164 @@
+[
+	{
+		"faculty_id" : "49",
+		"faculty_fullname" : "Информационно-библиотечный центр",
+		"faculty_code" : "000000228",
+		"faculty_shortname" : "ИБЦ"
+	},
+	{
+		"faculty_id" : "101",
+		"faculty_fullname" : "Факультет автоматизированных систем, транспорта и вооружений",
+		"faculty_code" : "000000127",
+		"faculty_shortname" : "ФАСТиВ"
+	},
+	{
+		"faculty_id" : "102",
+		"faculty_fullname" : "Факультет автомобильного транспорта",
+		"faculty_code" : "000000120",
+		"faculty_shortname" : "ФАТ"
+	},
+	{
+		"faculty_id" : "103",
+		"faculty_fullname" : "Факультет технологии конструкционных материалов",
+		"faculty_code" : "000000136",
+		"faculty_shortname" : "ФТКМ"
+	},
+	{
+		"faculty_id" : "104",
+		"faculty_fullname" : "Факультет технологии пищевых производств",
+		"faculty_code" : "000000142",
+		"faculty_shortname" : "ФТПП"
+	},
+	{
+		"faculty_id" : "105",
+		"faculty_fullname" : "Факультет экономики и управления",
+		"faculty_code" : "000000147",
+		"faculty_shortname" : "ФЭУ"
+	},
+	{
+		"faculty_id" : "106",
+		"faculty_fullname" : "Факультет электроники и вычислительной техники",
+		"faculty_code" : "000000157",
+		"faculty_shortname" : "ФЭВТ"
+	},
+	{
+		"faculty_id" : "107",
+		"faculty_fullname" : "Химико-технологический факультет",
+		"faculty_code" : "000000166",
+		"faculty_shortname" : "ХТФ"
+	},
+	{
+		"faculty_id" : "108",
+		"faculty_fullname" : "Факультет архитектуры и градостроительного развития",
+		"faculty_code" : "000000084",
+		"faculty_shortname" : "ФАГР"
+	},
+	{
+		"faculty_id" : "109",
+		"faculty_fullname" : "Факультет строительства и жилищно-коммунального хозяйства",
+		"faculty_code" : "000000108",
+		"faculty_shortname" : "ФСиЖКХ"
+	},
+	{
+		"faculty_id" : "110",
+		"faculty_fullname" : "Факультет транспортных, инженерных систем и техносферной безопасности",
+		"faculty_code" : "000000096",
+		"faculty_shortname" : "ФТИСиТБ"
+	},
+	{
+		"faculty_id" : "111",
+		"faculty_fullname" : "Кировский вечерний факультет",
+		"faculty_code" : "000000176",
+		"faculty_shortname" : "ВКФ"
+	},
+	{
+		"faculty_id" : "112",
+		"faculty_fullname" : "Красноармейский механико-металлургический факультет",
+		"faculty_code" : "000000177",
+		"faculty_shortname" : "ММФ"
+	},
+	{
+		"faculty_id" : "113",
+		"faculty_fullname" : "Факультет подготовки инженерных кадров",
+		"faculty_code" : "000000019",
+		"faculty_shortname" : "ФПИК"
+	},
+	{
+		"faculty_id" : "114",
+		"faculty_fullname" : "Факультет послевузовского образования",
+		"faculty_code" : "000000178",
+		"faculty_shortname" : "ФПО"
+	},
+	{
+		"faculty_id" : "115",
+		"faculty_fullname" : "Факультет дистанционного обучения",
+		"faculty_code" : "000000118",
+		"faculty_shortname" : "ФДО"
+	},
+	{
+		"faculty_id" : "116",
+		"faculty_fullname" : "Отдел аспирантуры, докторантуры",
+		"faculty_code" : "000000208",
+		"faculty_shortname" : "ОАД"
+	},
+	{
+		"faculty_id" : "117",
+		"faculty_fullname" : "Вечерний технологический факультет",
+		"faculty_code" : "000000292",
+		"faculty_shortname" : "ВТФ"
+	},
+	{
+		"faculty_id" : "119",
+		"faculty_fullname" : "Факультет подготовки иностранных специалистов",
+		"faculty_code" : "000000179",
+		"faculty_shortname" : "ФПИС"
+	},
+	{
+		"faculty_id" : "200",
+		"faculty_fullname" : "Инженерно-экономический факультет",
+		"faculty_code" : "000000211",
+		"faculty_shortname" : "ФЭИ"
+	},
+	{
+		"faculty_id" : "201",
+		"faculty_fullname" : "Автомеханический факультет",
+		"faculty_code" : "000000212",
+		"faculty_shortname" : "ФАМ"
+	},
+	{
+		"faculty_id" : "202",
+		"faculty_fullname" : "Вечерний факультет",
+		"faculty_code" : "000000213",
+		"faculty_shortname" : "ВФ"
+	},
+	{
+		"faculty_id" : "300",
+		"faculty_fullname" : "Промышленные технологии",
+		"faculty_code" : "000000229",
+		"faculty_shortname" : "ФПТ"
+	},
+	{
+		"faculty_id" : "301",
+		"faculty_fullname" : "Экономика, управление и информационные технологии",
+		"faculty_code" : "000000230",
+		"faculty_shortname" : "ФЭУиИТ"
+	},
+	{
+		"faculty_id" : "302",
+		"faculty_fullname" : "Факультет СПО (КТИ)",
+		"faculty_code" : "000000245",
+		"faculty_shortname" : "ФСПО"
+	},
+	{
+		"faculty_id" : "303",
+		"faculty_fullname" : "Факультет ВО (КТИ)",
+		"faculty_code" : "000000289",
+		"faculty_shortname" : "ФВО"
+	},
+	{
+		"faculty_id" : "990",
+		"faculty_fullname" : "ВолгГТУ",
+		"faculty_code" : "000000119",
+		"faculty_shortname" : "ВолгГТУ центр"
+	}
+]

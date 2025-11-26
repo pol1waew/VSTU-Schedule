@@ -5,7 +5,7 @@
         <form method="POST" enctype="multipart/form-data" action="import_place_reference/">
             {% csrf_token %}
             
-            <input type="file" name="selected_reference_file" required>  
+            <input type="file" name="place_reference_file" required>  
 
             <button type="submit">Импортировать аудитории из файла</button>
         </form>

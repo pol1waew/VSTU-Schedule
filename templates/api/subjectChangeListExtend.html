@@ -1,0 +1,15 @@
+{% extends "admin/change_list.html" %}
+
+{% block object-tools %}
+    <div>
+        <form method="POST" enctype="multipart/form-data" action="import_subject_reference/">
+            {% csrf_token %}
+            
+            <input type="file" name="subject_reference_file" required>  
+
+            <button type="submit">Импортировать предметы из файла</button>
+        </form>
+    </div>
+    <br />
+    {{ block.super }}
+{% endblock %}

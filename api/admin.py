@@ -42,30 +42,60 @@ class BaseAdmin(admin.ModelAdmin):
 
 @admin.register(Subject)
 class SubjectAdmin(BaseAdmin):
+    change_list_template = "../templates/api/subjectChangeListExtend.html"
     list_display = ("name",)
     search_fields = ("name",)
+
+    def get_urls(self):
+        return [path("import_subject_reference/", self.import_subject_reference)] + super().get_urls()
+
+    def import_subject_reference(self, request):
+        if request.method == "POST" and request.FILES.get("subject_reference_file"):
+            ReferenceImporter.import_subject_reference(request.FILES['subject_reference_file'].read())
+            messages.success(request, "Импорт успешно произведён")
+
+        return HttpResponseRedirect("../")
 
 
 @admin.register(EventParticipant)
 class EventParticipantAdmin(BaseAdmin):
+    change_list_template = "../templates/api/eventParticipantChangeListExtend.html"
     list_display = ("name", "role")
     search_fields = ("name", "role")
     list_filter = ("role",)
 
+    def get_urls(self):
+        return [path("import_teacher_reference/", self.import_teacher_reference),
+                path("import_student_reference/", self.import_student_reference)] + super().get_urls()
+
+    def import_teacher_reference(self, request):
+        if request.method == "POST" and request.FILES.get("teacher_reference_file"):
+            ReferenceImporter.import_teacher_reference(request.FILES['teacher_reference_file'].read())
+            messages.success(request, "Импорт успешно произведён")
+
+        return HttpResponseRedirect("../")
+    
+    def import_student_reference(self, request):
+        if request.method == "POST" and request.FILES.get("student_reference_file"):
+            ReferenceImporter.import_student_reference(request.FILES['student_reference_file'].read())
+            messages.success(request, "Импорт успешно произведён")
+
+        return HttpResponseRedirect("../")
+
 
 @admin.register(EventPlace)
 class EventPlaceAdmin(BaseAdmin):
-    change_list_template = "../templates/eventPlace.html"
+    change_list_template = "../templates/api/eventPlaceChangeListExtend.html"
     list_display = ("building", "room")
     search_fields = ("building", "room")
     list_filter = ("building",)
 
     def get_urls(self):
-        return [path("import_place_reference/", self.import_data)] + super().get_urls()
+        return [path("import_place_reference/", self.import_place_reference)] + super().get_urls()
 
-    def import_data(self, request):
-        if request.method == "POST" and request.FILES.get("selected_reference_file"):
-            ReferenceImporter.import_place_reference(request.FILES['selected_reference_file'].read())
+    def import_place_reference(self, request):
+        if request.method == "POST" and request.FILES.get("place_reference_file"):
+            ReferenceImporter.import_place_reference(request.FILES['place_reference_file'].read())
             messages.success(request, "Импорт успешно произведён")
 
         return HttpResponseRedirect("../")
@@ -135,16 +165,16 @@ class EventAdmin(BaseAdmin):
     class EventOverridenFilter(admin.SimpleListFilter):
         title = "Событие перезаписано"
         parameter_name = "is_overriden"
-        OVERRIDEN_NAMES = ("Перезаписан", "Перезаписаны")
-        NOT_OVERRIDEN_NAMES = ("Не перезаписан", "Не перезаписаны")
+        OVERRIDEN_VALUES = ("Перезаписан", "Перезаписаны")
+        NOT_OVERRIDEN_VALUES = ("Не перезаписан", "Не перезаписаны")
 
         def lookups(self, request, model_admin):
-            return (self.OVERRIDEN_NAMES, self.NOT_OVERRIDEN_NAMES)
+            return (self.OVERRIDEN_VALUES, self.NOT_OVERRIDEN_VALUES)
 
         def queryset(self, request, queryset):
-            if self.value() in self.OVERRIDEN_NAMES:
+            if self.value() in self.OVERRIDEN_VALUES:
                 return queryset.filter(**filters.EventFilter.overriden())
-            elif self.value() in self.NOT_OVERRIDEN_NAMES:
+            elif self.value() in self.NOT_OVERRIDEN_VALUES:
                 return queryset.filter(**filters.EventFilter.not_overriden())
             
             return queryset
@@ -222,7 +252,7 @@ class AbstractEventChangesAdmin(BaseAdmin):
 
 @admin.register(AbstractEvent)
 class AbstractEventAdmin(BaseAdmin):
-    change_list_template = "../templates/abstractEvent.html"
+    change_list_template = "../templates/api/abstractEventChangeListExtend.html"
     list_display = ("datemodified", "subject", "abstract_day", "time_slot")
     search_fields = ("participants__name", "subject__name", "places__building", "places__room", "kind__name")
     list_filter = ("kind__name",)
@@ -230,9 +260,9 @@ class AbstractEventAdmin(BaseAdmin):
     actions = ["delete_events", "fill", "check_fields"]
 
     def get_urls(self):
-        return [path("import_data/", self.import_data)] + super().get_urls()
+        return [path("import_data/", self.import_event_data)] + super().get_urls()
 
-    def import_data(self, request):
+    def import_event_data(self, request):
         if request.method == "POST" and request.FILES.get("selected_file"):
             ## TODO: when working with big files should use chunks() instead
             EventImportAPI.import_event_data(request.FILES['selected_file'].read())
@@ -285,9 +315,45 @@ class AbstractDayAdmin(BaseAdmin):
 
 @admin.register(Department)
 class DepartmentAdmin(BaseAdmin):
-    list_display = ("name", "organization_name")
+    class HasParentDepartmentFilter(admin.SimpleListFilter):
+        title = "Имеет родительское подразделение"
+        parameter_name = "has_parent_department"
+        HAS_VALUES = ["Да", "Да"]
+        HAS_NOT_VALUES = ["Нет", "Нет"]
+
+        def lookups(self, request, model_admin):
+            return (self.HAS_VALUES, self.HAS_NOT_VALUES)
+
+        def queryset(self, request, queryset):
+            if self.value() in self.HAS_VALUES:
+                return queryset.filter(parent_department__isnull=True)
+            elif self.value() in self.HAS_NOT_VALUES:
+                return queryset.filter(parent_department__isnull=False)
+            
+            return queryset
+        
+    change_list_template = "../templates/api/departmentChangeListExtend.html"
+    list_display = ("name", "shortname", "organization_name")
     search_fields = ("name", "organization__name")
-    list_filter = ("name", "organization__name")
+    list_filter = (HasParentDepartmentFilter, "organization__name")
+
+    def get_urls(self):
+        return [path("import_faculty_reference/", self.import_faculty_reference), 
+                path("import_department_reference/", self.import_department_reference)] + super().get_urls()
+
+    def import_faculty_reference(self, request):
+        if request.method == "POST" and request.FILES.get("faculty_reference_file"):
+            ReferenceImporter.import_faculty_reference(request.FILES['faculty_reference_file'].read())
+            messages.success(request, "Импорт успешно произведён")
+
+        return HttpResponseRedirect("../")
+    
+    def import_department_reference(self, request):
+        if request.method == "POST" and request.FILES.get("department_reference_file"):
+            ReferenceImporter.import_department_reference(request.FILES['department_reference_file'].read())
+            messages.success(request, "Импорт успешно произведён")
+
+        return HttpResponseRedirect("../")
 
     @admin.display(description=Department._meta.get_field("organization").verbose_name, 
                    ordering="organization__name")
