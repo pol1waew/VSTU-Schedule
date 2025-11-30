@@ -1,4 +1,5 @@
 import json
+from datetime import datetime, date
 from api.utilities import Utilities
 from rest_framework.exceptions import ValidationError
 from api.models import (
@@ -7,10 +8,14 @@ from api.models import (
     Organization,
     EventParticipant,
     Subject,
+    AbstractDay,
+    ScheduleTemplateMetadata,
+    ScheduleTemplate,
+    ScheduleMetadata,
+    Schedule,
 
     Event,
     EventKind,
-    Schedule,
     TimeSlot,
 )
 
@@ -144,7 +149,133 @@ class JSONImporter:
 
 
 class EventImporter:
-    pass
+    @classmethod
+    def import_events(cls, event_data : str):
+        """Import AbstractEvents and Events from given data
+        """
+
+        json_data = json.loads(event_data)
+        
+        cls.make_import(
+            json_data["title"],
+            json_data["table"]["grid"],
+            json_data["table"]["datetime"]["weeks"],
+            json_data["table"]["datetime"]["week_days"],
+            json_data["table"]["datetime"]["months"]
+        )
+
+    @classmethod
+    def make_import(cls, 
+                    title : str, 
+                    entries, 
+                    weeks, 
+                    week_days : list[str], 
+                    months : list[str]):
+        """Applies data on database
+        """
+        
+        schedule = cls.find_schedule(title)
+        reference_lookup : dict = {}
+
+        """
+        for entry in entries:
+        
+            reference_data = cls.collect_reference_data(entry)
+            ensure_reference_data(reference_data)
+            reference_lookup += cls.build_reference_lookup(reference_data)
+
+            cls.create_events(
+                schedule,
+                *cls.parse_data(entry)
+            )
+
+        """        
+
+        pass
+
+    @staticmethod
+    def collect_reference_data(event_data):
+        """Collects data from Event data
+        """
+
+        pass
+
+    @staticmethod
+    def ensure_reference_data(event_data) -> None:
+        """Creates models for Event data that not exist in database
+        """
+
+        pass
+
+    @staticmethod
+    def build_reference_lookup(reference_data : dict) -> dict:
+        """Finds models for reference_data
+        """
+        
+        pass
+
+    @staticmethod
+    def find_schedule(title : str) -> Schedule:
+        """Finds Schedule from given title. If Schedule not exists then creates it
+
+        Title must contain course, faculty, semester and years information
+        """
+        
+        pass
+
+    @staticmethod
+    def make_calendar(weeks,
+                      months : list[str],
+                      years : str) -> dict:
+        """Makes calendar of dates for Event creating in format:
+
+        parsed_weeks = { 
+            week_id : { 
+                week_day_index : [
+                    dd.mm.YYYY,
+                    dd.mm.YYYY...
+                ]
+            } 
+        }
+        """
+
+        pass
+
+    @staticmethod
+    def parse_data(event_data, 
+                   calendar, 
+                   week_days : list[str], 
+                   reference_lookup : dict) -> tuple[
+                       EventKind, 
+                       Subject, 
+                       list[EventParticipant], 
+                       list[EventPlace],
+                       list[AbstractDay],
+                       list[TimeSlot],
+                       list[date],
+                       list[date]
+                    ]:
+        """Finds existing models for Event data
+
+        Raise DoesNotExist if model not found
+        """
+        
+        pass
+
+    @staticmethod
+    def create_events(schedule : Schedule,
+                      kind : EventKind, 
+                      subject : Subject,
+                      participants : list[EventParticipant],
+                      places : list[EventPlace],
+                      abstract_day : AbstractDay,
+                      time_slots : list[TimeSlot],
+                      holds_on_dates : list[date]|list[None],
+                      calendar : dict):
+        """Creates AbstractEvents and Events for given TimeSlots and dates
+        """
+
+        pass
 
 
 class ReferenceImporter:
@@ -297,3 +428,87 @@ class ReferenceImporter:
         
         if students_to_create:
             EventParticipant.objects.bulk_create(students_to_create)
+
+    @staticmethod
+    def import_schedule(reference_data : str, save_archive_schedules : bool):
+        json_data = json.loads(reference_data)
+
+        for entry in json_data:
+            scope_value = Utilities.get_scope_value(entry["scope"])
+
+            if not scope_value:
+                raise ValueError(f"Степень обучения '{entry["scope"]}' не найдена.")
+            
+            try:
+                schedule_template_metadata = ScheduleTemplateMetadata.objects.get(
+                    faculty=entry["schedule_template_metadata_faculty_shortname"],
+                    scope=scope_value
+                )
+            except ScheduleTemplateMetadata.DoesNotExist:
+                schedule_template_metadata = ScheduleTemplateMetadata.objects.create(
+                    faculty=entry["schedule_template_metadata_faculty_shortname"],
+                    scope=scope_value
+                )
+
+            try:
+                department_ = Department.objects.get(shortname=entry["department_shortname"])
+            except Department.DoesNotExist:
+                raise Department.DoesNotExist(f"Подразделение '{entry["department_shortname"]}' не найдено.")
+            
+            try:
+                schedule_template = ScheduleTemplate.objects.get(
+                    metadata=schedule_template_metadata,
+                    department=department_
+                )
+            except ScheduleTemplate.DoesNotExist:
+                schedule_template = ScheduleTemplate.objects.create(
+                    metadata=schedule_template_metadata,
+                    repetition_period=14,
+                    repeatable=True,
+                    aligned_by_week_day=1,
+                    department=department_
+                )            
+
+            try:
+                schedule_metadata = ScheduleMetadata.objects.get(
+                    years=entry["years"],
+                    course=entry["course"],
+                    semester=entry["semester"]
+                )
+            except ScheduleMetadata.DoesNotExist:
+                schedule_metadata = ScheduleMetadata.objects.create(
+                    years=entry["years"],
+                    course=entry["course"],
+                    semester=entry["semester"]
+                )
+
+            try:
+                if not save_archive_schedules:
+                    Schedule.objects.filter(
+                        metadata=schedule_metadata,
+                        schedule_template=schedule_template,
+                        status=Schedule.Status.ARCHIVE
+                    ).delete()
+            except Schedule.DoesNotExist:
+                pass
+
+            try:
+                existing_schedule = Schedule.objects.get(
+                    metadata=schedule_metadata,
+                    schedule_template=schedule_template,
+                    status=Schedule.Status.ACTIVE
+                )
+
+                existing_schedule.status = Schedule.Status.ARCHIVE
+                existing_schedule.save()
+            except Schedule.DoesNotExist:
+                pass
+
+            Schedule.objects.create(
+                metadata=schedule_metadata,
+                status=Schedule.Status.ACTIVE,
+                start_date=datetime.strptime(entry["start_date"], "%d.%m.%Y"),
+                end_date=datetime.strptime(entry["end_date"], "%d.%m.%Y"),
+                starting_day_number=AbstractDay.objects.get(day_number=0),
+                schedule_template=schedule_template
+            )

@@ -200,6 +200,18 @@ class Utilities:
         return "", time_slot, ""
 
     @staticmethod
+    def normalize_subject_name(name : str) -> str:
+        return name.strip()
+
+    @staticmethod
+    def normalize_kind_name(kind : str) -> str:
+        return kind.strip().capitalize()
+
+    @staticmethod
+    def normalize_scope(scope : str):
+        return scope.strip().capitalize()
+
+    @staticmethod
     def get_month_number(name : str):
         """Returns month number from month name
         """
@@ -243,6 +255,12 @@ class Utilities:
             return names
 
         return MONTH_NAMES[month_number - 1] if month_number >= 1 and month_number <= 12 else None
+
+    @classmethod
+    def get_scope_value(cls, scope_label : str) -> ScheduleTemplateMetadata.Scope:
+        for scope in ScheduleTemplateMetadata.Scope:
+            if scope.label == cls.normalize_scope(scope_label):
+                return scope.value
 
 
 class EventImportAPI:
@@ -456,7 +474,7 @@ class EventImportAPI:
         """Applies data from loaded JSON on database
         """
         
-        schedule = cls.get_schedule(title)
+        schedule = cls.find_schedule(title)
         reference_data = cls._collect_reference_data(entries)
         cls._ensure_reference_data(reference_data)
         reference_lookup = cls._build_reference_lookup(reference_data)
@@ -731,8 +749,9 @@ class EventImportAPI:
 
                 WriteAPI.fill_semester_by_dates(created_abstract_event, calendar)
         
+    ## TODO: write tests
     @staticmethod
-    def get_schedule(title : str) -> Schedule:
+    def find_schedule(title : str) -> Schedule:
         """Parse timetable title and find Schedule based on this title
 
         Schedule must already exist. 
@@ -759,42 +778,56 @@ class EventImportAPI:
         SEMESTER_REG_EX = r"(\d)\s*семестр"
         # 2024-2025
         FULL_YEARS_REG_EX = r"(\d{4}-\d{4})"
+        # Бакалавры
+        # бакалавриат
+        # магистратура
+        # Аспирантура
+        # консульт.
+        SCOPE_REG_EX = r"(([бБ]акалавр|[мМ]агистр|[аА]спирант|[кК]онсульт)[а-яА-ЯёЁ]*)"
 
-        filter_kwargs = {}
+        filter_query = {}
 
         course_match = re.search(COURSE_REG_EX, title, flags=re.IGNORECASE)
         if course_match:
-            filter_kwargs["metadata__course"] = int(course_match.group(1))
+            filter_query["metadata__course"] = int(course_match.group(1))
 
         faculty_tokens = re.findall(FACULTY_REG_EX, title)
         if faculty_tokens:
-            filter_kwargs["schedule_template__metadata__faculty__iexact"] = faculty_tokens[-1]
+            filter_query["schedule_template__metadata__faculty__iexact"] = faculty_tokens[-1]
 
         semester_match = re.search(SEMESTER_REG_EX, title, flags=re.IGNORECASE)
         if semester_match:
-            filter_kwargs["metadata__semester"] = int(semester_match.group(1))
+            filter_query["metadata__semester"] = int(semester_match.group(1))
 
         years_match = re.search(FULL_YEARS_REG_EX, title)
         if years_match:
-            filter_kwargs["metadata__years"] = years_match.group(1)
+            filter_query["metadata__years"] = years_match.group(1)
 
-        if not filter_kwargs:
+        scope_match = re.search(SCOPE_REG_EX, title)
+        if scope_match:
+            filter_query["schedule_template__metadata__scope"] = Utilities.get_scope_value(
+                Utilities.normalize_scope(scope_match.group(1))
+            )
+
+        if not filter_query:
             raise ValueError(
                 f"Не удалось извлечь параметры расписания из заголовка '{title}'. "
                 "Убедитесь, что он содержит хотя бы номер курса и сокращение факультета."
             )
+        
+        filter_query["status"] = Schedule.Status.ACTIVE
 
-        schedules = Schedule.objects.filter(**filter_kwargs)
+        schedules = Schedule.objects.filter(**filter_query)
 
         if not schedules.exists():
             raise Schedule.DoesNotExist(
-                f"Расписание с параметрами {filter_kwargs} не найдено. "
+                f"Расписание с параметрами {filter_query} не найдено. "
                 f"Заголовок: '{title}'."
             )
 
         if schedules.count() > 1:
             raise Schedule.MultipleObjectsReturned(
-                f"Найдено несколько расписаний, удовлетворяющих параметрам {filter_kwargs}. "
+                f"Найдено несколько расписаний, удовлетворяющих параметрам {filter_query}. "
                 "Уточните заголовок или дополните его семестром и учебным годом."
             )
 
@@ -1152,3 +1185,38 @@ class WriteAPI:
         response["Content-Disposition"] = f"attachment; filename={datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}.xlsx"
 
         return response
+    
+    @staticmethod
+    def create_common_abstract_days() -> bool:
+        abstract_days_data = [
+            (0, "1 неделя, Понедельник"),
+            (1, "1 неделя, Вторник"),
+            (2, "1 неделя, Среда"),
+            (3, "1 неделя, Четверг"),
+            (4, "1 неделя, Пятница"),
+            (5, "1 неделя, Суббота"),
+            (6, "1 неделя, Воскресенье"),
+            (7, "2 неделя, Понедельник"),
+            (8, "2 неделя, Вторник"),
+            (9, "2 неделя, Среда"),
+            (10, "2 неделя, Четверг"),
+            (11, "2 неделя, Пятница"),
+            (12, "2 неделя, Суббота"),
+            (13, "2 неделя, Воскресенье")
+        ]
+        abstract_days_to_create = []
+
+        for data in abstract_days_data:
+            try:
+                AbstractDay.objects.get(day_number=data[0], name=data[1])
+            except AbstractDay.DoesNotExist:
+                abstract_days_to_create.append(
+                    AbstractDay(day_number=data[0], name=data[1])
+                )
+        
+        if abstract_days_to_create:
+            AbstractDay.objects.bulk_create(abstract_days_to_create)
+
+            return True
+        
+        return False

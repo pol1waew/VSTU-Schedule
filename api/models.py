@@ -159,7 +159,7 @@ class ScheduleTemplateMetadata(CommonModel):
     scope = models.CharField(choices=Scope, max_length=32, verbose_name="Обучение")
 
     def __repr__(self):
-        return f"{self.faculty}, {self.scope}"
+        return f"{self.faculty}, {self.Scope(self.scope).label}"
 
 
 class ScheduleMetadata(CommonModel):
@@ -242,7 +242,7 @@ class Schedule(CommonModel):
         return events.annotate(max_date=models.Max("holdings__date")).order_by("-max_date").first()   ######
 
     def __repr__(self):
-        return f"{self.schedule_template.metadata}, {self.metadata}"
+        return f"{self.Status(self.status).label}, {self.schedule_template.metadata}, {self.metadata}"
     
     def save(self, **kwargs):
         super().save(**kwargs)

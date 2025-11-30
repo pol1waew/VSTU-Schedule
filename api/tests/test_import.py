@@ -1,7 +1,7 @@
 from datetime import datetime
 from django.test import TestCase
 from api.importers import EventImporter, ReferenceImporter
-from api.utilities import EventImportAPI
+from api.utilities import WriteAPI, EventImportAPI
 from api.utility_filters import TimeSlotFilter, PlaceFilter
 from api.models import (
     Schedule,
@@ -22,29 +22,40 @@ from api.models import (
 """py manage.py test api.tests.test_import
 """
 
-class TestEventImporter(TestCase):   
+class TestEventImporter(TestCase):
+    FACULTY_REFERENCE_DATA = """
+        [
+            {
+                "faculty_id" : "111",
+                "faculty_fullname" : "Факультет электроники и вычислительной техники",
+                "faculty_code" : "000000111",
+                "faculty_shortname" : "ФЭВТ"
+            }
+        ]
+    """
+    SCHEDULE_REFERENCE_DATA = """
+        [
+            {
+                "course": "4",
+                "schedule_template_metadata_faculty_shortname": "ФЭВТ",
+                "semester": "2",
+                "years": "2024-2025",
+                "start_date": "01.09.2024",
+                "end_date": "01.02.2025",
+                "scope": "Бакалавриат",
+                "department_shortname": "ФЭВТ"
+            }
+        ]
+    """
+    
     def setUp(self):
-        self.create_abstract_days()
+        WriteAPI.create_common_abstract_days()
+        Organization.objects.create(name="ВолгГТУ")
+        ReferenceImporter.import_faculty_reference(self.FACULTY_REFERENCE_DATA)
+        ReferenceImporter.import_schedule(self.SCHEDULE_REFERENCE_DATA, True)
+        #self.create_abstract_days() ## TODO: replace with WriteAPI.create_common_abstract_days
         #self.create_time_slots()
-        self.create_schedule()
-
-    def create_abstract_days(self):
-        AbstractDay.objects.bulk_create([
-            AbstractDay(day_number=0, name="1 неделя, Понедельник"),
-            AbstractDay(day_number=1, name="1 неделя, Вторник"),
-            AbstractDay(day_number=2, name="1 неделя, Среда"),
-            AbstractDay(day_number=3, name="1 неделя, Четверг"),
-            AbstractDay(day_number=4, name="1 неделя, Пятница"),
-            AbstractDay(day_number=5, name="1 неделя, Суббота"),
-            AbstractDay(day_number=6, name="1 неделя, Воскресенье"),
-            AbstractDay(day_number=7, name="2 неделя, Понедельник"),
-            AbstractDay(day_number=8, name="2 неделя, Вторник"),
-            AbstractDay(day_number=9, name="2 неделя, Среда"),
-            AbstractDay(day_number=10, name="2 неделя, Четверг"),
-            AbstractDay(day_number=11, name="2 неделя, Пятница"),
-            AbstractDay(day_number=12, name="2 неделя, Суббота"),
-            AbstractDay(day_number=13, name="2 неделя, Воскресенье")
-        ])
+        #self.create_schedule() ## TODO: replace with Schedule importer
 
     def create_time_slots(self):
         TimeSlot.objects.bulk_create([
@@ -55,45 +66,7 @@ class TestEventImporter(TestCase):
                 TimeSlot(alt_name="9-10", start_time=datetime.strptime("15:20:00", "%H:%M:%S"), end_time=datetime.strptime("16:50:00", "%H:%M:%S")),
                 TimeSlot(alt_name="11-12", start_time=datetime.strptime("17:00:00", "%H:%M:%S"), end_time=datetime.strptime("18:30:00", "%H:%M:%S"))
         ])
-
-    def create_schedule(self):
-        organization_ = Organization.objects.create(
-            name="ВолГТУ"
-        )
-        
-        department_ = Department.objects.create(
-            name="ФЭВТ",
-            organization=organization_
-        )
-
-        schedule_template_metadata = ScheduleTemplateMetadata.objects.create(
-            faculty="ФЭВТ",
-            scope=ScheduleTemplateMetadata.Scope.BACHELOR
-        )
-
-        schedule_template = ScheduleTemplate.objects.create(
-            metadata=schedule_template_metadata,
-            repetition_period=14,
-            repeatable=True,
-            aligned_by_week_day=1,
-            department=department_
-        )
-
-        schedule_metadata = ScheduleMetadata.objects.create(
-            years="2024-2025",
-            course=4,
-            semester=2
-        )
-        
-        Schedule.objects.create(
-            metadata=schedule_metadata,
-            status=Schedule.Status.ACTIVE,
-            start_date=datetime.strptime("01.09.2025", "%d.%m.%Y"),
-            end_date=datetime.strptime("01.02.2026", "%d.%m.%Y"),
-            starting_day_number=AbstractDay.objects.get(day_number=0),
-            schedule_template=schedule_template
-        )
-        
+ 
     def test_import_data(self):
         # manualy created TimeSlot
         TimeSlot.objects.create(alt_name="11-12", start_time=datetime.strptime("17:00:00", "%H:%M:%S"), end_time=datetime.strptime("18:30:00", "%H:%M:%S"))
@@ -221,6 +194,45 @@ class TestEventImporter(TestCase):
             self.assertNotEqual(TimeSlot.objects.get(end_time__contains="15:10"), None)
         except TimeSlot.DoesNotExist:
             self.fail()
+
+    def test_import_events_for_only_active_schedule(self):
+        ReferenceImporter.import_schedule(self.SCHEDULE_REFERENCE_DATA, True)
+
+        try:
+            self.assertEqual(Schedule.objects.all().count(), 2)
+            self.assertEqual(Schedule.objects.filter(status=Schedule.Status.ACTIVE).count(), 1)
+            self.assertEqual(Schedule.objects.filter(status=Schedule.Status.ARCHIVE).count(), 1)
+        except Schedule.DoesNotExist:
+            self.fail()
+        
+        try:
+            self.assertEqual(
+                AbstractEvent.objects.filter(schedule__status=Schedule.Status.ACTIVE).count(),
+                AbstractEvent.objects.all().count()
+            )
+            self.assertEqual(
+                AbstractEvent.objects.filter(schedule__status=Schedule.Status.ARCHIVE).count(),
+                0
+            )
+        except AbstractEvent.DoesNotExist:
+            self.fail()
+
+    def test_find_schedule(self):
+        self.assertEqual(
+            EventImportAPI.find_schedule("Учебные занятия 4 курса ФЭВТ бакалавриат на 2 семестр 2024-2025 учебного года"),
+            Schedule.objects.get(schedule_template__metadata__faculty="ФЭВТ")
+        )
+        self.assertRaises(
+            ValueError,
+            EventImportAPI.find_schedule,
+            ""
+        )
+        self.assertRaises(
+            Schedule.DoesNotExist,
+            EventImportAPI.find_schedule,
+            "Учебные занятия 22 курса АБВГ на 0 семестр 1999-9999 учебного года"
+        )
+            
 
 
 class TestReferenceImporter(TestCase):
@@ -516,3 +528,452 @@ class TestReferenceImporter(TestCase):
             ).name, "АДП-322")
         except EventParticipant.DoesNotExist:
             self.fail()
+
+    def test_schedule_import_saving_archive(self):
+        FACULTY_REFERENCE_DATA = """
+            [
+                {
+                    "faculty_id" : "111",
+                    "faculty_fullname" : "Факультет электроники и вычислительной техники",
+                    "faculty_code" : "000000111",
+                    "faculty_shortname" : "ФЭВТ"
+                },
+                {
+                    "faculty_id" : "222",
+                    "faculty_fullname" : "Химико-технологический факультет",
+                    "faculty_code" : "000000222",
+                    "faculty_shortname" : "ХТФ"
+                }
+            ]
+        """
+        SCHEDULE_REFERENCE_DATA = """
+            [
+                {
+                    "course": "4",
+                    "schedule_template_metadata_faculty_shortname": "ФЭВТ",
+                    "semester": "1",
+                    "years": "2024-2025",
+                    "start_date": "01.09.2025",
+                    "end_date": "01.02.2026",
+                    "scope": "бакалавриат",
+                    "department_shortname": "ФЭВТ"
+                },
+                {
+                    "course": "4",
+                    "schedule_template_metadata_faculty_shortname": "ХТФ",
+                    "semester": "1",
+                    "years": "2024-2025",
+                    "start_date": "01.09.2025",
+                    "end_date": "01.02.2026",
+                    "scope": "  магистратура ",
+                    "department_shortname": "ХТФ"
+                },
+                {
+                    "course": "3",
+                    "schedule_template_metadata_faculty_shortname": "ФЭВТ",
+                    "semester": "1",
+                    "years": "2024-2025",
+                    "start_date": "01.09.2025",
+                    "end_date": "01.02.2026",
+                    "scope": " Магистратура",
+                    "department_shortname": "ФЭВТ"
+                }
+            ]
+        """
+
+        Organization.objects.create(name="ВолгГТУ")
+        if not WriteAPI.create_common_abstract_days():
+            self.fail()
+
+        ReferenceImporter.import_faculty_reference(FACULTY_REFERENCE_DATA)
+
+        # first import
+        ReferenceImporter.import_schedule(SCHEDULE_REFERENCE_DATA, True)
+
+        try:
+            self.assertEqual(Schedule.objects.all().count(), 3)
+            self.assertEqual(Schedule.objects.filter(status=Schedule.Status.ACTIVE).count(), 3)
+            self.assertEqual(Schedule.objects.filter(status=Schedule.Status.ARCHIVE).count(), 0)
+            self.assertNotEqual(
+                Schedule.objects.get(
+                    status=Schedule.Status.ACTIVE,
+                    schedule_template__metadata__faculty="ФЭВТ",
+                    metadata__course=4
+                ),
+                None
+            )
+            self.assertNotEqual(
+                Schedule.objects.get(
+                    status=Schedule.Status.ACTIVE,
+                    schedule_template__metadata__faculty="ФЭВТ",
+                    metadata__course=3
+                ),
+                None
+            )
+        except Schedule.DoesNotExist:
+            self.fail()
+
+        # 4 course 1 semester 2024-2025
+        # 3 course 1 semester 2024-2025
+        try:
+            self.assertEqual(ScheduleMetadata.objects.all().count(), 2)
+        except ScheduleMetadata.DoesNotExist:
+            self.fail()
+
+        # Факультет электроники и вычислительной техники (Бакалавриат)
+        # Факультет электроники и вычислительной техники (Магистратура)
+        # Химико-технологический факультет
+        try:
+            self.assertEqual(ScheduleTemplate.objects.all().count(), 3)
+        except ScheduleTemplate.DoesNotExist:
+            self.fail()
+        
+        # ФЭВТ, Бакалавриат
+        # ФЭВТ, Магистратура
+        # ХТФ, Магистратура
+        try:
+            self.assertEqual(ScheduleTemplateMetadata.objects.all().count(), 3)
+        except ScheduleTemplateMetadata.DoesNotExist:
+            self.fail()
+
+        # second import
+        # now we have ARCHIVE Schedules
+        ReferenceImporter.import_schedule(SCHEDULE_REFERENCE_DATA, True)
+
+        try:
+            self.assertEqual(Schedule.objects.all().count(), 6)
+            self.assertEqual(Schedule.objects.filter(status=Schedule.Status.ACTIVE).count(), 3)
+            self.assertEqual(Schedule.objects.filter(status=Schedule.Status.ARCHIVE).count(), 3)
+            self.assertEqual(
+                Schedule.objects.filter(
+                    status=Schedule.Status.ACTIVE,
+                    schedule_template__metadata__faculty="ФЭВТ",
+                    metadata__course=4
+                ).count(),
+                1
+            )
+            self.assertEqual(
+                Schedule.objects.filter(
+                    status=Schedule.Status.ACTIVE,
+                    schedule_template__metadata__faculty="ХТФ",
+                    metadata__course=4
+                ).count(),
+                1
+            )
+            self.assertEqual(
+                Schedule.objects.filter(
+                    status=Schedule.Status.ARCHIVE,
+                    schedule_template__metadata__faculty="ХТФ",
+                    metadata__course=4
+                ).count(),
+                1
+            )
+        except Schedule.DoesNotExist:
+            self.fail()
+
+        # nothing must change
+        # 4 course 1 semester 2024-2025
+        # 3 course 1 semester 2024-2025
+        try:
+            self.assertEqual(ScheduleMetadata.objects.all().count(), 2)
+        except ScheduleMetadata.DoesNotExist:
+            self.fail()
+
+        # Факультет электроники и вычислительной техники (Бакалавриат)
+        # Факультет электроники и вычислительной техники (Магистратура)
+        # Химико-технологический факультет
+        try:
+            self.assertEqual(ScheduleTemplate.objects.all().count(), 3)
+        except ScheduleTemplate.DoesNotExist:
+            self.fail()
+        
+        # ФЭВТ, Бакалавриат
+        # ФЭВТ, Магистратура
+        # ХТФ, Магистратура
+        try:
+            self.assertEqual(ScheduleTemplateMetadata.objects.all().count(), 3)
+        except ScheduleTemplateMetadata.DoesNotExist:
+            self.fail()
+
+        # third import
+        ReferenceImporter.import_schedule(SCHEDULE_REFERENCE_DATA, True)
+
+        try:
+            self.assertEqual(Schedule.objects.all().count(), 9)
+            self.assertEqual(Schedule.objects.filter(status=Schedule.Status.ACTIVE).count(), 3)
+            self.assertEqual(Schedule.objects.filter(status=Schedule.Status.ARCHIVE).count(), 6)
+            self.assertEqual(
+                Schedule.objects.filter(
+                    status=Schedule.Status.ACTIVE,
+                    schedule_template__metadata__faculty="ФЭВТ",
+                    metadata__course=4
+                ).count(),
+                1
+            )
+            self.assertEqual(
+                Schedule.objects.filter(
+                    status=Schedule.Status.ACTIVE,
+                    schedule_template__metadata__faculty="ХТФ",
+                    metadata__course=4
+                ).count(),
+                1
+            )
+            self.assertEqual(
+                Schedule.objects.filter(
+                    status=Schedule.Status.ARCHIVE,
+                    schedule_template__metadata__faculty="ХТФ",
+                    metadata__course=4
+                ).count(),
+                2
+            )
+        except Schedule.DoesNotExist:
+            self.fail()
+
+        # nothing must change
+        # 4 course 1 semester 2024-2025
+        # 3 course 1 semester 2024-2025
+        try:
+            self.assertEqual(ScheduleMetadata.objects.all().count(), 2)
+        except ScheduleMetadata.DoesNotExist:
+            self.fail()
+
+        # Факультет электроники и вычислительной техники (Бакалавриат)
+        # Факультет электроники и вычислительной техники (Магистратура)
+        # Химико-технологический факультет
+        try:
+            self.assertEqual(ScheduleTemplate.objects.all().count(), 3)
+        except ScheduleTemplate.DoesNotExist:
+            self.fail()
+        
+        # ФЭВТ, Бакалавриат
+        # ФЭВТ, Магистратура
+        # ХТФ, Магистратура
+        try:
+            self.assertEqual(ScheduleTemplateMetadata.objects.all().count(), 3)
+        except ScheduleTemplateMetadata.DoesNotExist:
+            self.fail()
+
+    def test_schedule_import_deleting_archive(self):
+        FACULTY_REFERENCE_DATA = """
+            [
+                {
+                    "faculty_id" : "111",
+                    "faculty_fullname" : "Факультет электроники и вычислительной техники",
+                    "faculty_code" : "000000111",
+                    "faculty_shortname" : "ФЭВТ"
+                },
+                {
+                    "faculty_id" : "222",
+                    "faculty_fullname" : "Химико-технологический факультет",
+                    "faculty_code" : "000000222",
+                    "faculty_shortname" : "ХТФ"
+                }
+            ]
+        """
+        SCHEDULE_REFERENCE_DATA = """
+            [
+                {
+                    "course": "4",
+                    "schedule_template_metadata_faculty_shortname": "ФЭВТ",
+                    "semester": "1",
+                    "years": "2024-2025",
+                    "start_date": "01.09.2025",
+                    "end_date": "01.02.2026",
+                    "scope": "бакалавриат",
+                    "department_shortname": "ФЭВТ"
+                },
+                {
+                    "course": "4",
+                    "schedule_template_metadata_faculty_shortname": "ХТФ",
+                    "semester": "1",
+                    "years": "2024-2025",
+                    "start_date": "01.09.2025",
+                    "end_date": "01.02.2026",
+                    "scope": "  магистратура ",
+                    "department_shortname": "ХТФ"
+                },
+                {
+                    "course": "3",
+                    "schedule_template_metadata_faculty_shortname": "ФЭВТ",
+                    "semester": "1",
+                    "years": "2024-2025",
+                    "start_date": "01.09.2025",
+                    "end_date": "01.02.2026",
+                    "scope": " Магистратура",
+                    "department_shortname": "ФЭВТ"
+                }
+            ]
+        """
+
+        Organization.objects.create(name="ВолгГТУ")
+        if not WriteAPI.create_common_abstract_days():
+            self.fail()
+
+        ReferenceImporter.import_faculty_reference(FACULTY_REFERENCE_DATA)
+
+        # first import
+        ReferenceImporter.import_schedule(SCHEDULE_REFERENCE_DATA, False)
+
+        try:
+            self.assertEqual(Schedule.objects.all().count(), 3)
+            self.assertEqual(Schedule.objects.filter(status=Schedule.Status.ACTIVE).count(), 3)
+            self.assertEqual(Schedule.objects.filter(status=Schedule.Status.ARCHIVE).count(), 0)
+            self.assertNotEqual(
+                Schedule.objects.get(
+                    status=Schedule.Status.ACTIVE,
+                    schedule_template__metadata__faculty="ФЭВТ",
+                    metadata__course=4
+                ),
+                None
+            )
+            self.assertNotEqual(
+                Schedule.objects.get(
+                    status=Schedule.Status.ACTIVE,
+                    schedule_template__metadata__faculty="ФЭВТ",
+                    metadata__course=3
+                ),
+                None
+            )
+        except Schedule.DoesNotExist:
+            self.fail()
+
+        # 4 course 1 semester 2024-2025
+        # 3 course 1 semester 2024-2025
+        try:
+            self.assertEqual(ScheduleMetadata.objects.all().count(), 2)
+        except ScheduleMetadata.DoesNotExist:
+            self.fail()
+
+        # Факультет электроники и вычислительной техники (Бакалавриат)
+        # Факультет электроники и вычислительной техники (Магистратура)
+        # Химико-технологический факультет
+        try:
+            self.assertEqual(ScheduleTemplate.objects.all().count(), 3)
+        except ScheduleTemplate.DoesNotExist:
+            self.fail()
+        
+        # ФЭВТ, Бакалавриат
+        # ФЭВТ, Магистратура
+        # ХТФ, Магистратура
+        try:
+            self.assertEqual(ScheduleTemplateMetadata.objects.all().count(), 3)
+        except ScheduleTemplateMetadata.DoesNotExist:
+            self.fail()
+
+        # second import
+        # now we have ARCHIVE Schedules
+        ReferenceImporter.import_schedule(SCHEDULE_REFERENCE_DATA, False)
+
+        try:
+            self.assertEqual(Schedule.objects.all().count(), 6)
+            self.assertEqual(Schedule.objects.filter(status=Schedule.Status.ACTIVE).count(), 3)
+            self.assertEqual(Schedule.objects.filter(status=Schedule.Status.ARCHIVE).count(), 3)
+            self.assertEqual(
+                Schedule.objects.filter(
+                    status=Schedule.Status.ACTIVE,
+                    schedule_template__metadata__faculty="ФЭВТ",
+                    metadata__course=4
+                ).count(),
+                1
+            )
+            self.assertEqual(
+                Schedule.objects.filter(
+                    status=Schedule.Status.ACTIVE,
+                    schedule_template__metadata__faculty="ХТФ",
+                    metadata__course=4
+                ).count(),
+                1
+            )
+            self.assertEqual(
+                Schedule.objects.filter(
+                    status=Schedule.Status.ARCHIVE,
+                    schedule_template__metadata__faculty="ХТФ",
+                    metadata__course=4
+                ).count(),
+                1
+            )
+        except Schedule.DoesNotExist:
+            self.fail()
+
+        # nothing must change
+        # 4 course 1 semester 2024-2025
+        # 3 course 1 semester 2024-2025
+        try:
+            self.assertEqual(ScheduleMetadata.objects.all().count(), 2)
+        except ScheduleMetadata.DoesNotExist:
+            self.fail()
+
+        # Факультет электроники и вычислительной техники (Бакалавриат)
+        # Факультет электроники и вычислительной техники (Магистратура)
+        # Химико-технологический факультет
+        try:
+            self.assertEqual(ScheduleTemplate.objects.all().count(), 3)
+        except ScheduleTemplate.DoesNotExist:
+            self.fail()
+        
+        # ФЭВТ, Бакалавриат
+        # ФЭВТ, Магистратура
+        # ХТФ, Магистратура
+        try:
+            self.assertEqual(ScheduleTemplateMetadata.objects.all().count(), 3)
+        except ScheduleTemplateMetadata.DoesNotExist:
+            self.fail()
+
+        # third import
+        ReferenceImporter.import_schedule(SCHEDULE_REFERENCE_DATA, False)
+
+        try:
+            self.assertEqual(Schedule.objects.all().count(), 6)
+            self.assertEqual(Schedule.objects.filter(status=Schedule.Status.ACTIVE).count(), 3)
+            self.assertEqual(Schedule.objects.filter(status=Schedule.Status.ARCHIVE).count(), 3)
+            self.assertEqual(
+                Schedule.objects.filter(
+                    status=Schedule.Status.ACTIVE,
+                    schedule_template__metadata__faculty="ФЭВТ",
+                    metadata__course=4
+                ).count(),
+                1
+            )
+            self.assertEqual(
+                Schedule.objects.filter(
+                    status=Schedule.Status.ACTIVE,
+                    schedule_template__metadata__faculty="ХТФ",
+                    metadata__course=4
+                ).count(),
+                1
+            )
+            self.assertEqual(
+                Schedule.objects.filter(
+                    status=Schedule.Status.ARCHIVE,
+                    schedule_template__metadata__faculty="ХТФ",
+                    metadata__course=4
+                ).count(),
+                1
+            )
+        except Schedule.DoesNotExist:
+            self.fail()
+
+        # nothing must change
+        # 4 course 1 semester 2024-2025
+        # 3 course 1 semester 2024-2025
+        try:
+            self.assertEqual(ScheduleMetadata.objects.all().count(), 2)
+        except ScheduleMetadata.DoesNotExist:
+            self.fail()
+
+        # Факультет электроники и вычислительной техники (Бакалавриат)
+        # Факультет электроники и вычислительной техники (Магистратура)
+        # Химико-технологический факультет
+        try:
+            self.assertEqual(ScheduleTemplate.objects.all().count(), 3)
+        except ScheduleTemplate.DoesNotExist:
+            self.fail()
+        
+        # ФЭВТ, Бакалавриат
+        # ФЭВТ, Магистратура
+        # ХТФ, Магистратура
+        try:
+            self.assertEqual(ScheduleTemplateMetadata.objects.all().count(), 3)
+        except ScheduleTemplateMetadata.DoesNotExist:
+            self.fail()
+

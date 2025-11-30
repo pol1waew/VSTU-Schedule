@@ -1,0 +1,31 @@
+{% extends "admin/change_list.html" %}
+
+{% block object-tools %}
+    <div>
+        <form method="POST" enctype="multipart/form-data" action="import_schedule/">
+            {% csrf_token %}
+
+            <div>
+                <input type="file" name="selected_file" required>  
+            </div>
+
+            <div>
+                <button type="submit" name="common_import" title="Существующее расписание станет архивным при совпадении">
+                    Импортировать расписание из файла
+                </button>
+
+                <button type="submit" name="delete_import" title="Уже архивное расписание будет удалено; существующее станет архивным при совпадении">
+                    Импортировать расписание из файла с удалением архивных
+                </button>
+            </div>
+        </form>
+
+        <form method="POST" enctype="multipart/form-data" action="delete_archive_schedules/" style="margin-top: 20px;">
+            {% csrf_token %}
+
+            <button type="submit">Удалить все архивные расписания</button>
+        </form>
+    </div>
+    <br />
+    {{ block.super }}
+{% endblock %}

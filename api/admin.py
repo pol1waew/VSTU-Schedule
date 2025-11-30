@@ -135,9 +135,50 @@ class ScheduleTemplateAdmin(BaseAdmin):
 
 @admin.register(Schedule)
 class ScheduleAdmin(BaseAdmin):
-    list_display = ("faculty", "course", "semester", "years")
+    change_list_template = "../templates/api/scheduleChangeListExtend.html"
+    list_display = ("faculty", "status", "course", "semester", "years")
     search_fields = ("schedule_template__metadata__faculty", "schedule_template__metadata__scope")
-    list_filter = ("schedule_template__metadata__faculty", "schedule_template__metadata__scope", "metadata__course", "metadata__semester", "metadata__years")
+    list_filter = (
+        "schedule_template__metadata__scope",
+        "metadata__course",
+        "status",
+        "schedule_template__metadata__faculty", 
+        "metadata__semester", 
+        "metadata__years"
+    )
+
+    actions = ["extended_delete"]
+
+    def get_urls(self):
+        return [path("import_schedule/", self.import_schedule_data),
+                path("delete_archive_schedules/", self.delete_archive_schedules)] + super().get_urls()
+
+    def import_schedule_data(self, request):
+        if request.method == "POST" and request.FILES.get("selected_file"):
+            if "common_import" in request.POST:
+                ReferenceImporter.import_schedule(request.FILES['selected_file'].read(), True)
+            elif "delete_import" in request.POST:
+                ReferenceImporter.import_schedule(request.FILES['selected_file'].read(), False)
+            messages.success(request, "Импорт успешно произведён")
+
+        return HttpResponseRedirect("../")
+    
+    ## TODO: add confirming page
+    def delete_archive_schedules(self, request):
+        Schedule.objects.filter(status=Schedule.Status.ARCHIVE).delete()
+
+        return HttpResponseRedirect("../")
+    
+    ## TODO: ...
+    @admin.action(description="Удалить выбранные Расписания и их Метаданные расписания")
+    def extended_delete(modeladmin, request, queryset):
+        """Deletes selected Schedules and its ScheduleMetadatas
+        """
+        return
+        ScheduleMetadata.objects.filter(pk__in=queryset.values_list("metadata__pk", flat=True)).delete()
+        queryset.delete()
+
+        messages.success(request, "Успешно удалены")
 
     @admin.display(description=Schedule._meta.get_field("schedule_template").verbose_name, 
                    ordering="schedule_template__metadata__faculty")
@@ -309,8 +350,18 @@ class AbstractEventAdmin(BaseAdmin):
 
 @admin.register(AbstractDay)
 class AbstractDayAdmin(BaseAdmin):
+    change_list_template = "../templates/api/abstractDayChangeListExtend.html"
     list_display = ("name", "day_number")
     search_fields = ("name", "day_number")
+
+    def get_urls(self):
+        return [path("create_abstract_days/", self.create_abstract_days)] + super().get_urls()
+
+    def create_abstract_days(self, request):
+        if WriteAPI.create_common_abstract_days():
+            messages.success(request, "Стандарные абстрактные дни успешно созданы")
+
+        return HttpResponseRedirect("../")
 
 
 @admin.register(Department)
@@ -363,9 +414,22 @@ class DepartmentAdmin(BaseAdmin):
 
 @admin.register(Organization)
 class OrganizationAdmin(BaseAdmin):
+    change_list_template = "../templates/api/organizationChangeListExtend.html"
     list_display = ("name",)
     search_fields = ("name",)
     list_filter = ("name",)
+
+    def get_urls(self):
+        return [path("create_organization/", self.create_organization)] + super().get_urls()
+
+    def create_organization(self, request):
+        try:
+            Organization.objects.get(name="ВолгГТУ")
+        except Organization.DoesNotExist:
+            Organization.objects.create(name="ВолгГТУ")
+            messages.success(request, "Учреждение (ВолгГТУ) успешно создано")
+
+        return HttpResponseRedirect("../")
 
 
 @admin.register(TimeSlot)
