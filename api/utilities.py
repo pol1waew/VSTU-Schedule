@@ -419,13 +419,14 @@ class EventImportAPI:
             if new_places:
                 EventPlace.objects.bulk_create(new_places)
 
+        #TODO: rewrite
         time_slots = reference_data.get("time_slots", set())
         if time_slots:
             filter_by_start_time, left_time_slots = filters.TimeSlotFilter.by_start_time([time_slot[1] for time_slot in time_slots])
             
             if filter_by_start_time:
                 existing_time_slots = set(
-                    TimeSlot.objects.filter(**filter_by_start_time).values_list("start_time")
+                    TimeSlot.objects.filter(**filter_by_start_time).values_list("start_time", flat=True)
                 )
             else:
                 existing_time_slots = set()
@@ -448,7 +449,7 @@ class EventImportAPI:
                     end_time=datetime.strptime(end_time, "%H:%M") if end_time else None
                 )
                 for alt_name, start_time, end_time in time_slots
-                if start_time and start_time not in existing_time_slots
+                if start_time and datetime.strptime(start_time, "%H:%M").time() not in existing_time_slots
             ]
 
             if new_time_slots:
@@ -694,9 +695,10 @@ class EventImportAPI:
             if not normalized_time_slot:
                 continue
             
-            time_slot = reference_lookup["time_slots"].get(
+            ## TODO: select timeslot with alt_name > without altname
+            time_slot = reference_lookup["time_slots"].filter(
                 **filters.TimeSlotFilter.by_repr(normalized_time_slot[1] if normalized_time_slot[1] else normalized_time_slot[0])
-            )
+            ).first()
 
             if time_slot:
                 time_slots.append(time_slot)
@@ -1186,9 +1188,10 @@ class WriteAPI:
 
         return response
     
+    # TODO: tests
     @staticmethod
     def create_common_abstract_days() -> bool:
-        abstract_days_data = [
+        ABSTRACT_DAYS_DATA = [
             (0, "1 неделя, Понедельник"),
             (1, "1 неделя, Вторник"),
             (2, "1 неделя, Среда"),
@@ -1206,7 +1209,7 @@ class WriteAPI:
         ]
         abstract_days_to_create = []
 
-        for data in abstract_days_data:
+        for data in ABSTRACT_DAYS_DATA:
             try:
                 AbstractDay.objects.get(day_number=data[0], name=data[1])
             except AbstractDay.DoesNotExist:
@@ -1216,6 +1219,41 @@ class WriteAPI:
         
         if abstract_days_to_create:
             AbstractDay.objects.bulk_create(abstract_days_to_create)
+
+            return True
+        
+        return False
+
+    @staticmethod
+    def create_common_time_slots() -> bool:
+        TIME_SLOTS_DATA = [
+            ("1-2", "08:30", "10:00"),
+            ("3-4", "10:10", "11:40"),
+            ("5-6", "11:50", "13:20"),
+            ("7-8", "13:40", "15:10"),
+            ("9-10", "15:20", "16:50"),
+            ("11-12", "17:00", "18:30"),
+        ]
+        time_slots_to_create = []
+
+        for data in TIME_SLOTS_DATA:
+            try:
+                TimeSlot.objects.get(
+                    alt_name=data[0],
+                    start_time=data[1],
+                    end_time=data[2]
+                )
+            except TimeSlot.DoesNotExist:
+                time_slots_to_create.append(
+                    TimeSlot(
+                        alt_name=data[0],
+                        start_time=data[1],
+                        end_time=data[2]
+                    )
+                )
+        
+        if time_slots_to_create:
+            TimeSlot.objects.bulk_create(time_slots_to_create)
 
             return True
         

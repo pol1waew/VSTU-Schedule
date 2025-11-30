@@ -188,6 +188,7 @@ class TestEventImporter(TestCase):
         EventImportAPI._ensure_reference_data(INPUT_DATA)
 
         try:
+            self.assertEqual(TimeSlot.objects.all().count(), 4)
             self.assertNotEqual(TimeSlot.objects.get(start_time__contains="8:30"), None)
             self.assertNotEqual(TimeSlot.objects.get(start_time__contains="11:55"), None)
             self.assertNotEqual(TimeSlot.objects.get(end_time__contains="15:01"), None)
@@ -977,3 +978,4 @@ class TestReferenceImporter(TestCase):
         except ScheduleTemplateMetadata.DoesNotExist:
             self.fail()
 
+    # TODO: schedule_import test with event deleting

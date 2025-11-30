@@ -434,9 +434,19 @@ class OrganizationAdmin(BaseAdmin):
 
 @admin.register(TimeSlot)
 class TimeSlotAdmin(BaseAdmin):
+    change_list_template = "../templates/api/timeSlotChangeListExtend.html"
     list_display = ("alt_name", "start_time", "end_time")
     search_fields = ("alt_name", "start_time", "end_time")
     list_filter = ("alt_name",)
+
+    def get_urls(self):
+        return [path("create_time_slots/", self.create_time_slots)] + super().get_urls()
+
+    def create_time_slots(self, request):
+        if WriteAPI.create_common_time_slots():
+            messages.success(request, "Стандарные учебные часы успешно созданы")
+
+        return HttpResponseRedirect("../")
 
 
 @admin.register(DayDateOverride)
