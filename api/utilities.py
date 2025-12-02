@@ -563,7 +563,7 @@ class EventImportAPI:
             "kinds" : {},
             "participants" : {},
             "places" : {},
-            "time_slots" : QuerySet
+            "time_slots" : TimeSlot.objects.none()
         }
 
         subjects = ref_data.get("subjects", set())
