@@ -74,49 +74,98 @@ def format_events(events):
 
 
 def is_same_entries(first_entry, second_entry):
-    """Checks is given entries are the same
-
-    Function compare some fields to make decision
     """
-    
-    return abs(first_entry.time_slot_override.pk - second_entry.time_slot_override.pk) == 1 and \
-            first_entry.subject_override == second_entry.subject_override and \
-            list(first_entry.get_groups()) == list(second_entry.get_groups()) and \
-            list(first_entry.get_teachers()) == list(second_entry.get_teachers()) and \
-            list(first_entry.places_override.all()) == list(second_entry.places_override.all())
+    Проверяет, считаем ли два события одним и тем же «занятием» для целей UI‑слияния.
+
+    ВАЖНО:
+    - Больше НЕ опираемся на разницу pk учебных часов (abs(pk1 - pk2) == 1),
+      т.к. это приводит к ложному объединению разных времён (пример 15:20 и 17:00).
+    - Считаем события одинаковыми, только если совпадает:
+      * время слота (start_time и end_time),
+      * предмет и тип занятия,
+      * полный набор групп,
+      * полный набор преподавателей,
+      * набор аудиторий,
+      * явная дата проведения (holds_on_date) у абстрактных событий.
+    """
+
+    ts1 = first_entry.time_slot_override
+    ts2 = second_entry.time_slot_override
+
+    if not ts1 or not ts2:
+        return False
+
+    same_time = (
+        ts1.start_time == ts2.start_time and
+        ts1.end_time == ts2.end_time
+    )
+    if not same_time:
+        return False
+
+    if first_entry.subject_override_id != second_entry.subject_override_id:
+        return False
+
+    if first_entry.kind_override_id != second_entry.kind_override_id:
+        return False
+
+    first_groups = tuple(sorted(first_entry.get_groups().values_list("pk", flat=True)))
+    second_groups = tuple(sorted(second_entry.get_groups().values_list("pk", flat=True)))
+    if first_groups != second_groups:
+        return False
+
+    first_teachers = tuple(sorted(first_entry.get_teachers().values_list("pk", flat=True)))
+    second_teachers = tuple(sorted(second_entry.get_teachers().values_list("pk", flat=True)))
+    if first_teachers != second_teachers:
+        return False
+
+    first_places = tuple(sorted(first_entry.places_override.values_list("pk", flat=True)))
+    second_places = tuple(sorted(second_entry.places_override.values_list("pk", flat=True)))
+    if first_places != second_places:
+        return False
+
+    if first_entry.abstract_event.holds_on_date != second_entry.abstract_event.holds_on_date:
+        return False
+
+    return True
 
 
 def get_row_spans(entries):
-    """Returns a list of table row spans
     """
-    
-    row_spans = []
+    Строит матрицу rowSpan'ов для таблицы.
 
-    for entry in entries:
-        row_spans.append([])
-        prev_event_expanded = False
+    Для каждого дня (список Events) ищем серии подряд идущих одинаковых событий:
+    - для первого элемента серии ставим rowSpan = длина серии,
+    - для остальных элементов серии ставим 0 (ячейка в шаблоне не рисуется).
 
-        for i in range(0, len(entry)):
-            # if previous row expanded
-            # need to collaspe current
-            if prev_event_expanded:
-                row_spans[len(row_spans) - 1].append(0)
-                prev_event_expanded = False
-                continue
-                            
-            # skip last row
-            if i + 1 >= len(entry):
-                row_spans[len(row_spans) - 1].append(1)
-                continue
+    Примеры:
+    - [A, A, A] → [3, 0, 0]
+    - [A, B, B, C] → [1, 2, 0, 1]
+    - [A(11:50), A(13:40)] с разным временем → [1, 1] (не сливаются).
+    """
 
-            if is_same_entries(entry[i], entry[i + 1]):
-                row_spans[len(row_spans) - 1].append(2)
-                prev_event_expanded = True
-            else:
-                row_spans[len(row_spans) - 1].append(1)
+    row_spans: list[list[int]] = []
+
+    for day_events in entries:
+        spans_for_day: list[int] = []
+        i = 0
+
+        while i < len(day_events):
+            run_length = 1
+            while (
+                i + run_length < len(day_events)
+                and is_same_entries(day_events[i], day_events[i + run_length])
+            ):
+                run_length += 1
+
+            spans_for_day.append(run_length)
+            for _ in range(1, run_length):
+                spans_for_day.append(0)
+
+            i += run_length
+
+        row_spans.append(spans_for_day)
 
     return row_spans
-
 
 def get_calendar(entries):
     """Makes and returns calendar for given entries
