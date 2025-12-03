@@ -903,6 +903,50 @@ class ReadAPI:
         return TimeSlot.objects.all()
 
 
+
+    # NOTE: дополнительные методы получения сущностей «по семестру».
+    # Идея: вместо полного списка всех когда‑либо созданных групп/преподавателей
+    # вернуть только тех, кто реально задействован в событиях активных расписаний.
+    # Это позволяет в UI не «засорять» фильтры старыми или неиспользуемыми записями.
+
+    @staticmethod
+    def get_semester_groups():
+        """
+        Вернуть только те группы, которые реально участвуют хотя бы в одном Event
+        в рамках активных расписаний (Schedule.status = ACTIVE).
+
+        Мы намеренно смотрим именно на Events, а не на AbstractEvents:
+        - Events уже отражают заполнение семестра (start_date / end_date),
+        - EventParticipant связан с Events через participants_override.
+        """
+        from api.models import Schedule
+
+        return (
+            EventParticipant.objects.filter(
+                is_group=True,
+                event__abstract_event__schedule__status=Schedule.Status.ACTIVE,
+            )
+            .distinct()
+        )
+
+    @staticmethod
+    def get_semester_teachers():
+        """
+        Вернуть только тех преподавателей (teacher/assistant), которые фигурируют
+        хотя бы в одном Event активных расписаний (Schedule.status = ACTIVE).
+
+        Это позволяет в UI показывать только реально задействованных в текущем семестре.
+        """
+        from api.models import Schedule
+
+        return (
+            EventParticipant.objects.filter(
+                role__in=[EventParticipant.Role.TEACHER, EventParticipant.Role.ASSISTANT],
+                event__abstract_event__schedule__status=Schedule.Status.ACTIVE,
+            )
+            .distinct()
+        )
+
 class WriteAPI:
     @staticmethod
     def create_event(date_ : str|date, abstract_event : AbstractEvent):
