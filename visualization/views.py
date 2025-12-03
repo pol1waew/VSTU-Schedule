@@ -54,8 +54,14 @@ def index(request):
 
         selected["time_slot"] = get_POST_value(request.POST, "time_slot[]")
 
-    groups = ReadAPI.get_all_groups().values_list("name", flat=True)
-    teachers = ReadAPI.get_all_teachers().values_list("name", flat=True)
+    # Заменили получение групп/преподавателей:
+    # groups = ReadAPI.get_all_groups().values_list("name", flat=True)
+    # teachers = ReadAPI.get_all_teachers().values_list("name", flat=True)
+
+    # Берём только тех, кто реально участвует в событиях активных расписаний.
+    groups = ReadAPI.get_semester_groups().values_list("name", flat=True)
+    teachers = ReadAPI.get_semester_teachers().values_list("name", flat=True)
+    
     places = [str(p) for p in ReadAPI.get_all_places()]
 
     subjects = ReadAPI.get_all_subjects().values_list("name", flat=True)
