@@ -17,7 +17,9 @@
         {% if data|length == 0 %}
             {% include "emptyTable.html" %}
         {% else %}
-            {% include "table.html" %}            
+            {% include "table.html" %}    
+            
+            {% include "footer.html" %}
         {% endif %}
     </body>
 </html>
