@@ -557,19 +557,19 @@ class EventImporter:
                       holds_on_dates : list[date]|list[None],
                       calendar : list[date]) -> None:
         """Creates AbstractEvents and Events for given TimeSlots and dates
+
+        Not create duplicates
         """
 
         for date_ in holds_on_dates:
             for time_slot in time_slots:
+                if ReadAPI.is_abstract_event_already_exists(
+                    kind, subject, participants, places, abstract_day, time_slot, date_, schedule
+                ):
+                    continue
+                
                 created_abstract_event = WriteAPI.create_abstract_event(
-                    kind,
-                    subject,
-                    participants,
-                    places,
-                    abstract_day,
-                    time_slot,
-                    date_,
-                    schedule
+                    kind, subject, participants, places, abstract_day, time_slot, date_, schedule
                 )
 
                 WriteAPI.fill_semester_by_dates(created_abstract_event, calendar)
@@ -578,74 +578,124 @@ class EventImporter:
 class ReferenceImporter:
     @staticmethod
     def import_place_reference(reference_data : str):
+        """
+
+        Not create duplicates
+        """
+
         json_data = json.loads(reference_data)
 
-        all_normalized_places = []
+        places_to_create = []
+        already_read_places = []
 
         for place in json_data["places"]:
             normalized_place = Utilities.normalize_place_repr(place)
 
-            if not normalized_place in all_normalized_places:
-                all_normalized_places.append(normalized_place)
+            if normalized_place in already_read_places or ReadAPI.is_place_already_exists(*normalized_place):
+                continue
 
-        places_to_create = []
-
-        for place in all_normalized_places:
             places_to_create.append(
                 EventPlace(
-                    building=place[0],
-                    room=place[1]
+                    building=normalized_place[0],
+                    room=normalized_place[1]
                 )
             )
+            
+            already_read_places.append(normalized_place)
 
         if places_to_create:
             EventPlace.objects.bulk_create(places_to_create)
 
     @staticmethod
     def import_subject_reference(reference_data : str):
+        """
+
+        Not create duplicates
+        """
+
         json_data = json.loads(reference_data)
 
         subjects_to_create = []
+        already_read_subjects = []
 
         for entry in json_data:
+            subject = entry["discipline_name"]
+            
+            if subject in already_read_subjects or ReadAPI.is_subject_already_exists(subject):
+                continue
+
             subjects_to_create.append(
-                Subject(name=entry["discipline_name"])
+                Subject(name=subject)
             )
+            
+            already_read_subjects.append(subject)
         
         if subjects_to_create:
             Subject.objects.bulk_create(subjects_to_create)
 
     @staticmethod
     def import_faculty_reference(reference_data : str):
+        """
+
+        Not create duplicates
+        """
+
         json_data = json.loads(reference_data)
 
         # TODO: looking baad
         organization = Organization.objects.get(name="ВолгГТУ")
         faculties_to_create = []
+        already_read_faculties = []
 
         for entry in json_data:
+            department_name = entry["faculty_fullname"]
+            department_shortname = entry["faculty_shortname"]
+            department_code = entry["faculty_id"]
+
+            if (department_name, department_shortname, department_code) in already_read_faculties \
+                or ReadAPI.is_department_already_exists(department_name, department_shortname, department_code):
+                continue
+
             faculties_to_create.append(
                 Department(
-                    name=entry["faculty_fullname"],
-                    shortname=entry["faculty_shortname"],
-                    code=entry["faculty_id"],
+                    name=department_name,
+                    shortname=department_shortname,
+                    code=department_code,
                     parent_department=None,
                     organization=organization
                 )
             )
+
+            already_read_faculties.append((department_name, department_shortname, department_code))
         
         if faculties_to_create:
             Department.objects.bulk_create(faculties_to_create)
 
     @staticmethod
     def import_department_reference(reference_data : str):
+        """
+
+        Creates Department even parent_department not found
+
+        Not create duplicates
+        """
+
         json_data = json.loads(reference_data)
 
         # TODO: looking baad
         organization = Organization.objects.get(name="ВолгГТУ")
         departments_to_create = []
+        already_read_departments = []
 
         for entry in json_data:
+            department_name = entry["department_fullname"]
+            department_shortname = entry["department_shortname"]
+            department_code = entry["department_code"]
+
+            if (department_name, department_shortname, department_code) in already_read_departments \
+                or ReadAPI.is_department_already_exists(department_name, department_shortname, department_code):
+                continue
+
             try:
                 parent_department = Department.objects.get(code=entry["faculty_id"])
             except Department.DoesNotExist:
@@ -653,13 +703,15 @@ class ReferenceImporter:
 
             departments_to_create.append(
                 Department(
-                    name=entry["department_fullname"],
-                    shortname=entry["department_shortname"],
-                    code=entry["department_code"],
+                    name=department_name,
+                    shortname=department_shortname,
+                    code=department_code,
                     parent_department=parent_department,
                     organization=organization
                 )
             )
+
+            already_read_departments.append((department_name, department_shortname, department_code))
         
         if departments_to_create:
             Department.objects.bulk_create(departments_to_create)
@@ -669,6 +721,8 @@ class ReferenceImporter:
         """
 
         Creates EventParticipant (teacher) even Department not found
+
+        Can create duplicates when teachers have same names (surname and name, patronymic abbreviations)
         """
 
         json_data = json.loads(reference_data)
@@ -683,10 +737,10 @@ class ReferenceImporter:
 
             teachers_to_create.append(
                 EventParticipant(
-                    name="{surname} {name}{patronymic}".format(
-                        surname=entry["staff_surname"],
-                        name=f"{entry["staff_name"][0]}." if entry["staff_name"] else "",
-                        patronymic=f"{entry["staff_patronymic"][0]}." if entry["staff_patronymic"] else ""
+                    name=Utilities.format_participant_name(
+                        entry["staff_surname"], 
+                        entry["staff_name"], 
+                        entry["staff_patronymic"]
                     ),
                     role=EventParticipant.Role.TEACHER, ## TODO: assistant
                     is_group=False,
@@ -701,12 +755,15 @@ class ReferenceImporter:
     def import_student_reference(reference_data : str):
         """
 
-        Creates EventParticipant (teacher) even Department not found
+        Creates EventParticipant (student) even Department not found
+
+        Not create duplicates
         """
         
         json_data = json.loads(reference_data)
 
         students_to_create = []
+        already_read_students = []
 
         for entry in json_data:
             try:
@@ -714,14 +771,20 @@ class ReferenceImporter:
             except Department.DoesNotExist:
                 department = None
 
+            student_name = entry["group_name"]
+
+            if student_name in already_read_students or ReadAPI.is_participant_already_exists(student_name, department):
+                continue
+
             students_to_create.append(
                 EventParticipant(
-                    name=entry["group_name"],
+                    name=student_name,
                     role=EventParticipant.Role.STUDENT,
                     is_group=True,
                     department=department
                 )
             )
+            already_read_students.append(student_name)
         
         if students_to_create:
             EventParticipant.objects.bulk_create(students_to_create)

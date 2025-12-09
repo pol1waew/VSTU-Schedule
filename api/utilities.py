@@ -212,6 +212,19 @@ class Utilities:
         return name.strip()
 
     @staticmethod
+    def format_participant_name(surname : str, name : str, patronymic : str) -> str:
+        """Makes EventParticipant name from given parameters in format:
+        SURNAME N.P. (where N - first char of name and P - first char of patronymic)
+
+        When name and/or patronymic empty skip it in resulting name (without dot)
+        """
+        return "{surname} {name}{patronymic}".format(
+            surname=surname,
+            name=f"{name[0]}." if name else "",
+            patronymic=f"{patronymic[0]}." if patronymic else ""
+        )
+
+    @staticmethod
     def normalize_scope(scope : str):
         return scope.strip().capitalize()
 
@@ -933,6 +946,53 @@ class ReadAPI:
     
     def has_any_filter_added(self):
         return True if self.filter_query else False
+    
+    @staticmethod
+    def is_abstract_event_already_exists(kind : EventKind, 
+                                         subject : Subject, 
+                                         participants : list[EventParticipant],
+                                         places : list[EventPlace],
+                                         abstract_day : AbstractDay,
+                                         time_slot : TimeSlot,
+                                         date_ : date|None,
+                                         schedule : Schedule) -> bool:
+        """Checks if AbstractEvent by given parameters exists
+        """
+        
+        return AbstractEvent.objects.filter(**filters.AbstractEventFilter.is_already_exist(
+            kind,
+            subject, 
+            participants,
+            places,
+            abstract_day,
+            time_slot,
+            date_,
+            schedule
+        )).exists()
+    
+    @staticmethod
+    def is_place_already_exists(building : str, room : str) -> bool:
+        """Checks if EventPlace by given building and room exists
+        """
+        return EventPlace.objects.filter(building=building, room=room).exists()
+    
+    @staticmethod
+    def is_subject_already_exists(name : str) -> bool:
+        """Checks if Subject by given name exists
+        """
+        return Subject.objects.filter(name=name).exists()
+    
+    @staticmethod
+    def is_participant_already_exists(name : str, department : Department) -> bool:
+        """Checks if EventParticipant by given name and department exists
+        """
+        return EventParticipant.objects.filter(name=name, department=department).exists()
+    
+    @staticmethod
+    def is_department_already_exists(name : str, shortname : str, code : str) -> bool:
+        """Checks if Department by given parameters exists
+        """
+        return Department.objects.filter(name=name, shortname=shortname, code=code).exists()
     
     @staticmethod
     def get_all_teachers():

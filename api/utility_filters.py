@@ -1,6 +1,15 @@
 from datetime import date, timedelta
 import re
-from api.models import (Event,)
+from api.models import (
+    Schedule,
+    EventParticipant,
+    AbstractDay,
+    TimeSlot,
+    Event,
+    EventPlace,
+    Subject,
+    EventKind
+)
 
 
 class UtilityFilterBase:
@@ -15,19 +24,19 @@ class DateFilter(UtilityFilterBase):
     """
 
     @staticmethod
-    def from_singe_date(date_ : str|date):
+    def from_singe_date(date_ : str|date) -> dict:
         return {"date" : date_}
 
     @staticmethod
-    def today():
+    def today() -> dict:
         return DateFilter.from_singe_date(date.today())
 
     @staticmethod
-    def tomorrow():
+    def tomorrow() -> dict:
         return DateFilter.from_singe_date(date.today() + timedelta(days=1))
 
     @staticmethod
-    def from_date(from_date : str|date, to_date : str|date):
+    def from_date(from_date : str|date, to_date : str|date) -> dict:
         if isinstance(from_date, str):
             from_date = date.fromisoformat(from_date)
         
@@ -37,7 +46,7 @@ class DateFilter(UtilityFilterBase):
         return {"date__range" : [from_date, to_date]}
     
     @staticmethod
-    def around_date(date_ : str|date, left_range : int, right_range : int):
+    def around_date(date_ : str|date, left_range : int, right_range : int) -> dict:
         if isinstance(date_, str):
             date_ = date.fromisoformat(date_)
         
@@ -47,15 +56,15 @@ class DateFilter(UtilityFilterBase):
         return {"date__range" : [left_date, right_date]}
     
     @staticmethod
-    def take_whole_week(date_):
+    def take_whole_week(date_) -> dict:
         return DateFilter.around_date(date_, date_.weekday(), 6 - date_.weekday())
 
     @staticmethod
-    def this_week():
+    def this_week() -> dict:
         return DateFilter.take_whole_week(date.today())
     
     @staticmethod
-    def next_week():
+    def next_week() -> dict:
         return DateFilter.take_whole_week(date.today() + timedelta(weeks=1))
     
 
@@ -64,7 +73,7 @@ class ParticipantFilter(UtilityFilterBase):
     """
 
     @staticmethod
-    def by_name(name : str|list[str]):
+    def by_name(name : str|list[str]) -> dict:
         """
         
         Use list of participant names for OR behaviour
@@ -76,7 +85,7 @@ class ParticipantFilter(UtilityFilterBase):
         return {"participants_override__name" : name}
         
     @staticmethod
-    def by_role(role : str|list[str]):
+    def by_role(role : str|list[str]) -> dict:
         """
 
         Use list of participant roles for OR behaviour
@@ -140,7 +149,7 @@ class PlaceFilter(UtilityFilterBase):
         return fitler_
 
     @staticmethod
-    def by_building(building : str|list[str]):
+    def by_building(building : str|list[str]) -> dict:
         """
 
         Use list of place buildings for OR behaviour
@@ -152,7 +161,7 @@ class PlaceFilter(UtilityFilterBase):
         return {"building" : building}
 
     @staticmethod
-    def by_room(room : str|list[str]):
+    def by_room(room : str|list[str]) -> dict:
         """
 
         Use list of place rooms for OR behaviour
@@ -324,7 +333,7 @@ class KindFilter(UtilityFilterBase):
     """
     
     @staticmethod
-    def by_name(name : str|list[str]):
+    def by_name(name : str|list[str]) -> dict:
         """
 
         Use list of subject names for OR behaviour
@@ -341,19 +350,19 @@ class EventFilter(UtilityFilterBase):
     """
 
     @staticmethod
-    def overriden():
+    def overriden() -> dict:
         return {"is_event_overriden" : True}
     
     @staticmethod
-    def not_overriden():
+    def not_overriden() -> dict:
         return {"is_event_overriden" : False}
 
     @staticmethod
-    def by_schedule(schedule):
+    def by_schedule(schedule) -> dict:
         return {"abstract_event__schedule" : schedule}
 
     @staticmethod
-    def by_department(department):        
+    def by_department(department)  -> dict:        
         return {"abstract_event__schedule__schedule_template__department" : department}
     
 
@@ -362,5 +371,25 @@ class AbstractEventFilter(UtilityFilterBase):
     """
 
     @staticmethod
-    def with_existing_events():
+    def with_existing_events() -> dict:
         return {"pk__in" : Event.objects.values_list("abstract_event__pk", flat=True).distinct()}
+    
+    @staticmethod
+    def is_already_exist(kind : EventKind, 
+                 subject : Subject, 
+                 participants : list[EventParticipant],
+                 places : list[EventPlace],
+                 abstract_day : AbstractDay,
+                 time_slot : TimeSlot,
+                 date_ : date|None,
+                 schedule : Schedule):
+        return {
+            "kind" : kind,
+            "subject" : subject,
+            "participants__in" : participants,
+            "places__in" : places,
+            "abstract_day" : abstract_day,
+            "time_slot" : time_slot,
+            "holds_on_date" : date_,
+            "schedule" : schedule
+        }

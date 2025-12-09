@@ -677,7 +677,7 @@ class TestEventImporter(TestCase):
                 department=DEPARTMENT
             ),
             EventParticipant.objects.create(
-                name="ПрИн-466.",
+                name="ПрИн-466",
                 role=EventParticipant.Role.STUDENT,
                 is_group=True,
                 department=DEPARTMENT
@@ -703,6 +703,62 @@ class TestEventImporter(TestCase):
 
         self.assertEqual(AbstractEvent.objects.all().count(), 2)
         self.assertEqual(Event.objects.all().count(), 4)
+
+        # trying to create duplicate
+        EventImporter.create_events(
+            SCHEDULE,
+            KIND,
+            SUBJECT,
+            PARTICIPANTS,
+            PLACES,
+            AbstractDay.objects.get(day_number=0),
+            TIME_SLOTS,
+            [None],
+            CALENDAR
+        )
+
+        self.assertEqual(AbstractEvent.objects.all().count(), 2)
+        self.assertEqual(Event.objects.all().count(), 4)
+
+        # still able to create AbstractEvents with holds_on_date
+        # method creates 4 AbstractEvents (for 2 holds_on_date with 2 time_slots)
+        # and 4 Events
+        EventImporter.create_events(
+            SCHEDULE,
+            KIND,
+            SUBJECT,
+            PARTICIPANTS,
+            PLACES,
+            AbstractDay.objects.get(day_number=0),
+            TIME_SLOTS,
+            [
+                datetime.strptime("10.03.2025", "%d.%m.%Y").date(),
+                datetime.strptime("11.03.2025", "%d.%m.%Y").date()
+            ],
+            None
+        )
+
+        self.assertEqual(AbstractEvent.objects.all().count(), 6)
+        self.assertEqual(Event.objects.all().count(), 8)
+
+        # trying to create duplicate
+        EventImporter.create_events(
+            SCHEDULE,
+            KIND,
+            SUBJECT,
+            PARTICIPANTS,
+            PLACES,
+            AbstractDay.objects.get(day_number=0),
+            TIME_SLOTS,
+            [
+                datetime.strptime("10.03.2025", "%d.%m.%Y").date(),
+                datetime.strptime("11.03.2025", "%d.%m.%Y").date()
+            ],
+            None
+        )
+
+        self.assertEqual(AbstractEvent.objects.all().count(), 6)
+        self.assertEqual(Event.objects.all().count(), 8)
 
     """
 
@@ -905,6 +961,28 @@ class TestReferenceImporter(TestCase):
             self.assertNotEqual(EventPlace.objects.get(building="В", room="902а"), None)
         except EventPlace.DoesNotExist:
             self.fail()
+    
+    def test_import_duplicate_place_reference(self):
+        PLACE_REFERENCE_DATA = """
+            {
+                "places": [
+                    "002",
+                    "002",
+                    "КЦ УНЦ",
+                    "В-1402-3",
+                    "Б-205а",
+                    "ГУК101"
+                ]
+            }
+        """
+
+        ReferenceImporter.import_place_reference(PLACE_REFERENCE_DATA)
+        ReferenceImporter.import_place_reference(PLACE_REFERENCE_DATA)
+
+        try:
+            self.assertEqual(EventPlace.objects.all().count(), 5)
+        except EventPlace.DoesNotExist:
+            self.fail()
 
     def test_faculty_import_reference(self):
         FACULTY_REFERENCE_DATA = """
@@ -939,6 +1017,34 @@ class TestReferenceImporter(TestCase):
             self.assertEqual(Department.objects.filter(parent_department__isnull=True).count(), 3)
             self.assertNotEqual(Department.objects.get(shortname="ФАСТиВ"), None)
             self.assertNotEqual(Department.objects.get(code="2"), None)
+        except Department.DoesNotExist:
+            self.fail()
+
+    def test_faculty_import_duplicate_reference(self):
+        FACULTY_REFERENCE_DATA = """
+            [
+                {
+                    "faculty_id" : "106",
+                    "faculty_fullname" : "Факультет электроники и вычислительной техники",
+                    "faculty_code" : "000000157",
+                    "faculty_shortname" : "ФЭВТ"
+                },
+                {
+                    "faculty_id" : "106",
+                    "faculty_fullname" : "Факультет электроники и вычислительной техники",
+                    "faculty_code" : "000000157",
+                    "faculty_shortname" : "ФЭВТ"
+                }
+            ]
+        """
+
+        Organization.objects.create(name="ВолгГТУ")
+
+        ReferenceImporter.import_faculty_reference(FACULTY_REFERENCE_DATA)
+        ReferenceImporter.import_faculty_reference(FACULTY_REFERENCE_DATA)
+
+        try:
+            self.assertEqual(Department.objects.all().count(), 1)
         except Department.DoesNotExist:
             self.fail()
 
@@ -987,9 +1093,54 @@ class TestReferenceImporter(TestCase):
 
         try:
             self.assertEqual(Department.objects.filter(parent_department__isnull=True).count(), 3) # 2 faculty + 1 department
+            self.assertEqual(Department.objects.filter(parent_department__isnull=False).count(), 1)
             self.assertNotEqual(Department.objects.get(shortname="ФЭВТ"), None)
             self.assertNotEqual(Department.objects.get(parent_department__code="111"), None)
             self.assertEqual(Department.objects.get(code="000000001").name, "Кафедра Автоматические установки")
+        except Department.DoesNotExist:
+            self.fail()
+
+    def test_department_import_reference(self):
+        FACULTY_REFERENCE_DATA = """
+            [
+                {
+                    "faculty_id" : "106",
+                    "faculty_fullname" : "Факультет электроники и вычислительной техники",
+                    "faculty_code" : "000000157",
+                    "faculty_shortname" : "ФЭВТ"
+                }
+            ]
+        """
+        DEPARTMENT_REFERENCE_DATA = """
+            [
+                {
+                    "department_id" : "106",
+                    "department_code" : "000000165",
+                    "department_fullname" : "Кафедра Программное обеспечение автоматизированных систем",
+                    "department_shortname" : "ПОАС",
+                    "faculty_id" : "106",
+                    "faculty_shortname" : "ФЭВТ"
+                },
+                {
+                    "department_id" : "106",
+                    "department_code" : "000000165",
+                    "department_fullname" : "Кафедра Программное обеспечение автоматизированных систем",
+                    "department_shortname" : "ПОАС",
+                    "faculty_id" : "106",
+                    "faculty_shortname" : "ФЭВТ"
+                }
+            ]
+        """
+
+        Organization.objects.create(name="ВолгГТУ")
+
+        ReferenceImporter.import_faculty_reference(FACULTY_REFERENCE_DATA)
+        ReferenceImporter.import_department_reference(DEPARTMENT_REFERENCE_DATA)
+        ReferenceImporter.import_department_reference(DEPARTMENT_REFERENCE_DATA)
+
+        try:
+            self.assertEqual(Department.objects.filter(parent_department__isnull=False).count(), 1)
+            self.assertEqual(Department.objects.filter(parent_department__isnull=True).count(), 1)
         except Department.DoesNotExist:
             self.fail()
 
@@ -1032,6 +1183,38 @@ class TestReferenceImporter(TestCase):
             self.assertEqual(Subject.objects.all().count(), 3)
             self.assertNotEqual(Subject.objects.get(name="Основы проектирования WEB-приложений"), None)
             self.assertNotEqual(Subject.objects.get(name="Экзамен по ПМ.05 'Организация деятельности подчиненного персонала'"), None)
+        except Subject.DoesNotExist:
+            self.fail()
+
+    def test_subject_import_duplicate_reference(self):
+        SUBJECT_REFERENCE_DATA = """
+        [
+            {
+                "discipline_code" : "0",
+                "discipline_name" : "НАЗВАНИЕ ПРЕДМЕТА",
+                "discipline_shortname" : "ЙЦУКЕН",
+                "is_elective" : "Нет",
+                "discipline_department_code" : "1",
+                "discipline_department_id" : "2",
+                "discipline_department_shortname" : "ФЫВАПР"
+            },
+            {
+                "discipline_code" : "0",
+                "discipline_name" : "НАЗВАНИЕ ПРЕДМЕТА",
+                "discipline_shortname" : "ЙЦУКЕН",
+                "is_elective" : "Нет",
+                "discipline_department_code" : "1",
+                "discipline_department_id" : "2",
+                "discipline_department_shortname" : "ФЫВАПР"
+            }
+        ]
+        """
+
+        ReferenceImporter.import_subject_reference(SUBJECT_REFERENCE_DATA)
+        ReferenceImporter.import_subject_reference(SUBJECT_REFERENCE_DATA)
+
+        try:
+            self.assertEqual(Subject.objects.all().count(), 1)
         except Subject.DoesNotExist:
             self.fail()
 
@@ -1082,6 +1265,62 @@ class TestReferenceImporter(TestCase):
             self.assertEqual(EventParticipant.objects.all().count(), 2)
             self.assertNotEqual(EventParticipant.objects.get(name="Рамасуббу С."), None)
             self.assertEqual(EventParticipant.objects.get(role=EventParticipant.Role.TEACHER, department__code="222").name, "Завьялов Д.В.")
+        except EventParticipant.DoesNotExist:
+            self.fail()
+
+    def test_teacher_import_duplicate_reference(self):
+        FACULTY_REFERENCE_DATA = """
+            [
+                {
+                    "faculty_id" : "111",
+                    "faculty_fullname" : "Факультет электроники и вычислительной техники",
+                    "faculty_code" : "000000111",
+                    "faculty_shortname" : "ФЭВТ"
+                },
+                {
+                    "faculty_id" : "222",
+                    "faculty_fullname" : "Химико-технологический факультет",
+                    "faculty_code" : "000000222",
+                    "faculty_shortname" : "ХТФ"
+                }
+            ]
+        """
+        TEACHER_REFERENCE_DATA = """
+        [
+            {
+                "staff_department_code" : "222",
+                "staff_department" : "Химико-технологический факультет",
+                "staff_code" : "000008785",
+                "staff_surname" : "Завьялов",
+                "staff_name" : "Дмитрий",
+                "staff_patronymic" : "Викторович"
+            },
+            {
+                "staff_department_code" : "222",
+                "staff_department" : "Химико-технологический факультет",
+                "staff_code" : "000008785",
+                "staff_surname" : "Завьялов",
+                "staff_name" : "Дмитрий",
+                "staff_patronymic" : "Викторович"
+            },
+            {
+                "staff_department_code" : "222",
+                "staff_department" : "Химико-технологический факультет",
+                "staff_code" : "000008785",
+                "staff_surname" : "Завьялов",
+                "staff_name" : "Денис",
+                "staff_patronymic" : "Владимирович"
+            }
+        ]
+        """
+        
+        Organization.objects.create(name="ВолгГТУ")
+
+        ReferenceImporter.import_faculty_reference(FACULTY_REFERENCE_DATA)
+        ReferenceImporter.import_teacher_reference(TEACHER_REFERENCE_DATA)
+
+        try:
+            self.assertEqual(EventParticipant.objects.all().count(), 3)
         except EventParticipant.DoesNotExist:
             self.fail()
 
@@ -1153,6 +1392,72 @@ class TestReferenceImporter(TestCase):
                 is_group=True,
                 department__name="Кафедра Автоматические установки"
             ).name, "АДП-322")
+        except EventParticipant.DoesNotExist:
+            self.fail()
+
+    def test_student_import_duplicate_reference(self):
+        FACULTY_REFERENCE_DATA = """
+            [
+                {
+                    "faculty_id" : "111",
+                    "faculty_fullname" : "Факультет электроники и вычислительной техники",
+                    "faculty_code" : "000000111",
+                    "faculty_shortname" : "ФЭВТ"
+                }
+            ]
+        """
+        DEPARTMENT_REFERENCE_DATA = """
+            [
+                {
+                    "department_id" : "1",
+                    "department_code" : "000000001",
+                    "department_fullname" : "Кафедра Автоматизация производственных процессов",
+                    "department_shortname" : "АПП",
+                    "faculty_id" : "111",
+                    "faculty_shortname" : "ФЭВТ"
+                },
+                {
+                    "department_id" : "2",
+                    "department_code" : "000000002",
+                    "department_fullname" : "Кафедра Автоматические установки",
+                    "department_shortname" : "АУ",
+                    "faculty_id" : "111",
+                    "faculty_shortname" : "ФЭВТ"
+                }
+            ]
+        """
+        STUDENT_REFERENCE_DATA = """
+        [
+            {
+                "group_code" : "000000558",
+                "group_name" : "ПрИн-166",
+                "faculty_id" : "000000001",
+                "speciality" : "Программная инженерия",
+                "profile" : "Программная инженерия. Факультет ФЭВТ",
+                "qualification" : "бакалавр техники и технологии",
+                "graduating_department_name" : ""
+            },
+            {
+                "group_code" : "000000558",
+                "group_name" : "ПрИн-166",
+                "faculty_id" : "000000001",
+                "speciality" : "Программная инженерия",
+                "profile" : "Программная инженерия. Факультет ФЭВТ",
+                "qualification" : "бакалавр техники и технологии",
+                "graduating_department_name" : ""
+            }
+        ]
+        """
+        
+        Organization.objects.create(name="ВолгГТУ")
+
+        ReferenceImporter.import_faculty_reference(FACULTY_REFERENCE_DATA)
+        ReferenceImporter.import_department_reference(DEPARTMENT_REFERENCE_DATA)
+        ReferenceImporter.import_student_reference(STUDENT_REFERENCE_DATA)
+        ReferenceImporter.import_student_reference(STUDENT_REFERENCE_DATA)
+
+        try:
+            self.assertEqual(EventParticipant.objects.all().count(), 1)
         except EventParticipant.DoesNotExist:
             self.fail()
 
