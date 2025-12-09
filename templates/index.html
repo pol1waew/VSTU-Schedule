@@ -14,12 +14,16 @@
     <body>
         {% include "header.html" %}
 
-        {% if data|length == 0 %}
-            {% include "emptyTable.html" %}
-        {% else %}
-            {% include "table.html" %}    
-            
-            {% include "footer.html" %}
+        {% if request.method == "GET" %}
+            {% include "welcome.html" %}
+        {% elif request.method == "POST" %}
+            {% if data|length == 0 %}
+                {% include "emptyTable.html" %}
+            {% else %}
+                {% include "table.html" %}    
+                
+                {% include "footer.html" %}
+            {% endif %}
         {% endif %}
     </body>
 </html>

@@ -1,12 +1,12 @@
 [
     {
-        "course": "1",
-        "schedule_template_metadata_faculty_shortname": "ФЭВТ",
-        "semester": "2",
-        "years": "2023-2024",
-        "start_date": "01.09.2023",
-        "end_date": "01.02.2024",
-        "scope": "аспирантура",
-        "department_shortname": "ФЭВТ"
+        "course": "2",
+        "schedule_template_metadata_faculty_shortname": "ХТФ",
+        "semester": "1",
+        "years": "2025-2026",
+        "start_date": "01.09.2025",
+        "end_date": "01.02.2026",
+        "scope": "магистратура",
+        "department_shortname": "ХТФ"
     }
 ]

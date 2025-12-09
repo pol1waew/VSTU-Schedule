@@ -208,8 +208,39 @@ class Utilities:
         return kind.strip().capitalize()
 
     @staticmethod
+    def normalize_participant_name(name : str) -> str:
+        return name.strip()
+
+    @staticmethod
     def normalize_scope(scope : str):
         return scope.strip().capitalize()
+
+    @staticmethod
+    def replace_all_roman_with_arabic_numerals(string_ : str) -> str:
+        """Replaces all roman numerals in given string with arabic numerals
+
+        Works only with numbers <= 10
+        """
+
+        NUMERALS = [
+            ("IX", "9"),
+            ("X", "10"),
+            ("VIII", "8"),
+            ("VII", "7"),
+            ("VI", "6"),
+            ("IV", "4"),
+            ("V", "5"),
+            ("III", "3"),
+            ("II", "2"),
+            ("I", "1")
+        ]
+
+        corrected_string = string_
+        
+        for roman, arabic in NUMERALS:
+            corrected_string = corrected_string.replace(roman, arabic)
+
+        return corrected_string
 
     @staticmethod
     def get_month_number(name : str):
@@ -257,10 +288,19 @@ class Utilities:
         return MONTH_NAMES[month_number - 1] if month_number >= 1 and month_number <= 12 else None
 
     @classmethod
-    def get_scope_value(cls, scope_label : str) -> ScheduleTemplateMetadata.Scope:
-        for scope in ScheduleTemplateMetadata.Scope:
-            if scope.label == cls.normalize_scope(scope_label):
-                return scope.value
+    def get_scope_value(cls, scope_label : str) -> ScheduleTemplateMetadata.Scope|None:
+        SCOPES_REG_EXS = [
+            (ScheduleTemplateMetadata.Scope.BACHELOR, r"(([бБ]акалавр)[а-яА-ЯёЁ]*)"),
+            (ScheduleTemplateMetadata.Scope.MASTER, r"(([мМ]агистр)[а-яА-ЯёЁ]*)"),
+            (ScheduleTemplateMetadata.Scope.POSTGRADUATE, r"(([аА]спирант)[а-яА-ЯёЁ]*)"),
+            (ScheduleTemplateMetadata.Scope.CONSULTATION, r"(([кК]онсульт)[а-яА-ЯёЁ]*)")
+        ]
+        
+        for scope, reg_ex in SCOPES_REG_EXS:
+            if re.search(reg_ex, cls.normalize_scope(scope_label)):
+                return scope
+            
+        return None
 
 
 class EventImportAPI:
@@ -535,7 +575,8 @@ class EventImportAPI:
             raise ValueError("Некорректный формат данных недель в JSON.")
 
         calendar = {}
-        left_year, right_year = schedule.metadata.years.split("-", 1)
+        # TODO: test with second semester schedule
+        LEFT_YEAR, RIGHT_YEAR = schedule.metadata.years.split("-", 1)
 
         for week_id in normalized_weeks.keys():
             calendar[week_id] = {}
@@ -549,7 +590,7 @@ class EventImportAPI:
                     for month_day in month["month_days"]:
                         calendar[week_id][week_day["week_day_index"]].append(
                             datetime.strptime(
-                                "{}.{}.{}".format(month_day, month_number, left_year if month_number > 6 else right_year), 
+                                "{}.{}.{}".format(month_day, month_number, LEFT_YEAR if month_number > 6 else RIGHT_YEAR), 
                                 "%d.%m.%Y"
                             ).date()
                         )
@@ -602,8 +643,10 @@ class EventImportAPI:
         if time_slots:
             start_times = {start_time for _, start_time, _ in time_slots if start_time}
             alt_names = {alt_name for alt_name, start_time, _ in time_slots if not start_time}
+
                         
             if start_times:
+                print("qweqwewqewqeq")
                 reference_lookup["time_slots"] = TimeSlot.objects.filter(start_time__in=start_times)
 
             if alt_names:
@@ -773,13 +816,14 @@ class EventImportAPI:
         # ФЭВТ
         # ТК
         # курсФЭВТна
+        # TODO: ФАСТиВ
         FACULTY_REG_EX = r"[А-ЯЁ]{2,}"
         # 2 семестр
         # 2семестр
         # 2   семестр
         SEMESTER_REG_EX = r"(\d)\s*семестр"
         # 2024-2025
-        FULL_YEARS_REG_EX = r"(\d{4}-\d{4})"
+        FULL_YEARS_REG_EX = r"(\d{4}\s*-\s*\d{4})"
         # Бакалавры
         # бакалавриат
         # магистратура
@@ -803,7 +847,7 @@ class EventImportAPI:
 
         years_match = re.search(FULL_YEARS_REG_EX, title)
         if years_match:
-            filter_query["metadata__years"] = years_match.group(1)
+            filter_query["metadata__years"] = years_match.group(1).replace(" ", "")
 
         scope_match = re.search(SCOPE_REG_EX, title)
         if scope_match:
@@ -843,7 +887,7 @@ class ReadAPI:
     def __init__(self, filter_query : dict = None):
         self.filter_query = filter_query or {}
 
-    def add_filter(self, filter : filters.UtilityFilterBase):
+    def add_filter(self, filter : filters.UtilityFilterBase|dict):
         """Updates filter query by adding new filter
 
         Allows user manualy append filters in format {'field_name' : value}
@@ -870,13 +914,25 @@ class ReadAPI:
         
         self.found_models = model.objects.filter(**self.filter_query)
 
-    def get_found_models(self):
+    def get_found_models(self) -> QuerySet:
         """Returns found models
 
         Can be empty if nothing found
         """
         
         return self.found_models
+    
+    def get_filter_query(self) -> dict:
+        return self.filter_query
+    
+    def is_any_model_found(self):
+        return self.found_models.exists()
+    
+    def is_single_model_found(self):
+        return self.found_models.count() == 1
+    
+    def has_any_filter_added(self):
+        return True if self.filter_query else False
     
     @staticmethod
     def get_all_teachers():
@@ -938,9 +994,6 @@ class WriteAPI:
         """Creates new Abstract Event
 
         Returns created Abstract Event
-
-        Returns:
-            abstract_event
         """
 
         abstract_event = AbstractEvent()
@@ -955,8 +1008,8 @@ class WriteAPI:
 
         abstract_event.save()
 
-        abstract_event.participants.add(*participants)
-        abstract_event.places.add(*places)
+        abstract_event.participants.set(participants)
+        abstract_event.places.set(places)
 
         return abstract_event
         
@@ -1009,7 +1062,7 @@ class WriteAPI:
         else:
             semester_start_date, semester_end_date, date_, repetition_period = cls.get_semester_filling_parameters(abstract_event)
 
-            while date_ < semester_end_date:
+            while date_ <= semester_end_date: # TODO: check < or <=
                 if date_ >= semester_start_date:
                     cls.create_event(date_, abstract_event)
                 
@@ -1233,6 +1286,8 @@ class WriteAPI:
             ("7-8", "13:40", "15:10"),
             ("9-10", "15:20", "16:50"),
             ("11-12", "17:00", "18:30"),
+            ("13-14", "18:35", "20:00"),
+            ("15-16", "20:05", "21:30")
         ]
         time_slots_to_create = []
 

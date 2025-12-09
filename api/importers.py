@@ -1,6 +1,7 @@
 import json
-from datetime import datetime, date
-from api.utilities import Utilities
+import re
+from datetime import datetime, date, timedelta
+from api.utilities import Utilities, ReadAPI, WriteAPI
 from rest_framework.exceptions import ValidationError
 from api.models import (
     EventPlace,
@@ -13,8 +14,8 @@ from api.models import (
     ScheduleTemplate,
     ScheduleMetadata,
     Schedule,
-
     Event,
+    AbstractEvent,
     EventKind,
     TimeSlot,
 )
@@ -174,34 +175,187 @@ class EventImporter:
         """Applies data on database
         """
         
-        schedule = cls.find_schedule(title)
+        schedule = cls.find_schedule(Utilities.replace_all_roman_with_arabic_numerals(title))
         reference_lookup : dict = {}
 
-        """
         for entry in entries:
-        
+            cls.correct_event_data(schedule, entry)
+
             reference_data = cls.collect_reference_data(entry)
-            ensure_reference_data(reference_data)
-            reference_lookup += cls.build_reference_lookup(reference_data)
+            cls.ensure_reference_data(reference_data)
+            reference_lookup.update(cls.build_reference_lookup(reference_data)) ## TODO: test
+
+            calendar = cls.make_calendar(weeks, months, schedule)
 
             cls.create_events(
                 schedule,
-                *cls.parse_data(entry)
+                *cls.parse_data(entry, calendar, week_days, reference_lookup)
             )
 
-        """        
+    @classmethod
+    def correct_event_data(cls, schedule : Schedule, event_data) -> None:
+        """Corrects inaccuracies and defects in given event_data
 
-        pass
-
-    @staticmethod
-    def collect_reference_data(event_data):
-        """Collects data from Event data
+        "places": [
+          "Б--514"
+        ]
         """
 
-        pass
+        corrected_holds_on_date = cls.correct_holds_on_date_data(schedule, event_data["holds_on_date"])
+
+        if corrected_holds_on_date:
+            event_data["holds_on_date"] = corrected_holds_on_date
 
     @staticmethod
-    def ensure_reference_data(event_data) -> None:
+    def correct_holds_on_date_data(schedule : Schedule, holds_on_date : list[str]) -> list[str]|None:
+        """Replaces ".." and ";" in holds_on_date with correct dates
+
+        Returns corrected sorted list holds_on_date of unique dates
+        
+        Returns None when nothing changed
+        """
+
+        # 03.09.2024
+        COMMON_DATE_REG_EX = r"\d{1,2}.\d{1,2}.\d{4}"
+
+        # 03.09..01.10
+        DOUBLE_RANGE_DATE_REG_EX = r"(\d{1,2}.\d{1,2})..(\d{1,2}.\d{1,2})"
+
+        # с 03.09
+        # с03.09
+        # с   03.09
+        SINGLE_RANGE_DATE_REG_EX = r"с\s*(\d{1,2}.\d{1,2})"
+
+        # 03.09
+        #   03.09
+        DAY_MONTH_DATE_REG_EX = r"(\d{1,2}.\d{1,2})"
+
+        LEFT_YEAR, RIGHT_YEAR = schedule.metadata.years.split("-", 1)
+        is_something_corrected = False
+        corrected_holds_on_date : set[str] = set()
+
+        for date_ in holds_on_date:
+            if re.search(COMMON_DATE_REG_EX, date_):
+                corrected_holds_on_date.add(date_)
+
+                continue
+
+            if ";" in date_:
+                for splited_date in date_.split(";"):
+                    day, month = splited_date.strip().split(".", 1)
+
+                    corrected_holds_on_date.add("{}.{}.{}".format(day, month, LEFT_YEAR if int(month) > 6 else RIGHT_YEAR))
+
+                is_something_corrected = True    
+
+                continue
+
+            match = re.search(DOUBLE_RANGE_DATE_REG_EX, date_)
+
+            if match:
+                from_day, from_month = match.group(1).split(".", 1)
+                to_day, to_month = match.group(2).split(".", 1)
+
+                from_date = datetime.strptime(
+                    "{}.{}.{}".format(from_day, from_month, LEFT_YEAR if int(from_month) > 6 else RIGHT_YEAR), 
+                    "%d.%m.%Y"
+                ).date()
+                to_date = datetime.strptime(
+                    "{}.{}.{}".format(to_day, to_month, LEFT_YEAR if int(from_month) > 6 else RIGHT_YEAR), 
+                    "%d.%m.%Y"
+                ).date()
+
+                while from_date <= to_date:
+                    corrected_holds_on_date.add(datetime.strftime(from_date, "%d.%m.%Y"))
+
+                    from_date += timedelta(days=schedule.schedule_template.repetition_period)
+
+                is_something_corrected = True
+
+                continue
+
+            match = re.search(SINGLE_RANGE_DATE_REG_EX, date_)
+
+            if match:
+                from_day, from_month = match.group(1).split(".", 1)
+
+                from_date = datetime.strptime(
+                    "{}.{}.{}".format(from_day, from_month, LEFT_YEAR if int(from_month) > 6 else RIGHT_YEAR), 
+                    "%d.%m.%Y"
+                ).date()
+
+                while from_date <= schedule.end_date:
+                    corrected_holds_on_date.add(datetime.strftime(from_date, "%d.%m.%Y"))
+
+                    from_date += timedelta(days=schedule.schedule_template.repetition_period)
+
+                is_something_corrected = True
+
+                continue
+
+            match = re.search(DAY_MONTH_DATE_REG_EX, date_)
+
+            if match:
+                day, month = match.group(1).strip().split(".", 1)
+
+                corrected_holds_on_date.add("{}.{}.{}".format(day, month, LEFT_YEAR if int(month) > 6 else RIGHT_YEAR))
+
+                is_something_corrected = True    
+
+                continue
+
+            raise ValueError(f"Неправильный формат даты '{date_}' в holds_on_date '{holds_on_date}'.")
+
+        return list(sorted(corrected_holds_on_date)) if is_something_corrected else None
+
+    @staticmethod
+    def collect_reference_data(event_data) -> dict:
+        subjects : set[str] = set()
+        kinds : set[str] = set()
+        teachers : set[str] = set()
+        groups : set[str] = set()
+        places : set[tuple[str, str]] = set()
+        time_slots : set[str] = set()
+
+        subjects.add(Utilities.normalize_subject_name[event_data["subject"]])
+
+        kinds.add(Utilities.normalize_kind_name[event_data["kind"]])
+
+        for teacher in event_data.get("participants", {}).get("teachers", []):
+            normalizaed_teacher = Utilities.normalize_participant_name(teacher)
+
+            if normalizaed_teacher:
+                teachers.add(normalizaed_teacher)
+                
+        for group in event_data.get("participants", {}).get("groups", []):
+            normalizaed_group = Utilities.normalize_participant_name(group)
+
+            if normalizaed_group:
+                groups.add(normalizaed_group)
+
+        for place in event_data.get("places", []):
+            normalizaed_place = Utilities.normalize_place_repr(place)
+
+            if normalizaed_place:
+                places.add(normalizaed_place)
+
+        for time_slot in event_data.get("hours", []):
+            normalizaed_time_slot = Utilities.normalize_time_slot_repr(time_slot)
+
+            if normalizaed_time_slot:
+                time_slots.add(normalizaed_time_slot)
+
+        return {
+            "subjects" : subjects,
+            "kinds" : kinds,
+            "teachers" : teachers,
+            "groups" : groups,
+            "places" : places,
+            "time_slots" : time_slots
+        }
+
+    @staticmethod
+    def ensure_reference_data(reference_data : dict) -> None:
         """Creates models for Event data that not exist in database
         """
 
@@ -218,15 +372,107 @@ class EventImporter:
     def find_schedule(title : str) -> Schedule:
         """Finds Schedule from given title. If Schedule not exists then creates it
 
-        Title must contain course, faculty, semester and years information
+        Title must contain course, faculty, scope, semester and years information
         """
         
-        pass
+        # 4 курса
+        # 4 курс
+        # 4курса
+        # 4   курса
+        # 1ый курс
+        # 5-ого курса
+        # 3-го курса
+        COURSE_REG_EX = r"(\d)(\-?[а-яА-ЯёЁ]*)?\s*курса?"
+
+        # ФЭВТ
+        # ТК
+        # курсФЭВТна
+        # TODO: ФАСТиВ
+        FACULTY_REG_EX = r"[А-ЯЁ]{2,}"
+
+        # Бакалавры
+        # бакалавриат
+        # магистров
+        # Аспирантура
+        # консульт.
+        SCOPE_REG_EX = r"(([бБ]акалавр|[мМ]агистр|[аА]спирант|[кК]онсульт)[а-яА-ЯёЁ]*)"
+
+        # 2 семестр
+        # 2семестр
+        # 2   семестр
+        # 2-ой семестр
+        # 2-й семестр
+        # 1ый семестр
+        ARABIC_NUMERALS_SEMESTER_REG_EX = r"(\d)(\-?[а-яА-ЯёЁ]*)?\s*семестра?"
+        
+        # 2024-2025
+        # 2024 -  2025
+        FULL_YEARS_REG_EX = r"(\d{4}\s*-\s*\d{4})"
+        
+        reader = ReadAPI()
+
+        course_match = re.search(COURSE_REG_EX, title, flags=re.IGNORECASE)
+        if course_match:
+            reader.add_filter({"metadata__course" : int(course_match.group(1))})
+
+        faculty_matches = re.findall(FACULTY_REG_EX, title)
+        if not faculty_matches:
+            raise ValueError(f"Не удалось извлечь подразделение или факультет из заголовка '{title}'.")
+
+        is_faculty_found = False
+        
+        for match in faculty_matches:
+            try:
+                Department.objects.get(shortname=match)
+            except Department.DoesNotExist:
+                continue
+            
+            # take first existing faculty from title
+            reader.add_filter({"schedule_template__metadata__faculty__iexact" : match})
+
+            is_faculty_found = True
+
+            break
+
+        if not is_faculty_found:
+            raise ValueError(f"Не удалось найти подходящее подразделение или факультет для заголовка '{title}'.")
+
+        scope_match = re.search(SCOPE_REG_EX, title)
+        if scope_match:
+            reader.add_filter({"schedule_template__metadata__scope" : Utilities.get_scope_value(
+                Utilities.normalize_scope(scope_match.group(1))
+            )})
+
+        semester_match = re.search(ARABIC_NUMERALS_SEMESTER_REG_EX, title, flags=re.IGNORECASE)
+        if semester_match:
+            reader.add_filter({"metadata__semester" : int(semester_match.group(1))})
+
+        full_years_match = re.search(FULL_YEARS_REG_EX, title)
+        if full_years_match:
+            reader.add_filter({"metadata__years" : full_years_match.group(1).replace(" ", "")})
+
+        if not reader.has_any_filter_added():
+            raise ValueError(f"Не удалось извлечь параметры расписания из заголовка '{title}'.")
+        
+        reader.add_filter({"status" : Schedule.Status.ACTIVE})
+        reader.find_models(Schedule)
+
+        if not reader.is_any_model_found():
+            raise Schedule.DoesNotExist(
+                f"Расписание с параметрами {reader.get_filter_query()} не найдено."
+                f"Заголовок: '{title}'."
+            )
+        
+        if not reader.is_single_model_found():
+            raise Schedule.MultipleObjectsReturned(
+                f"Найдено несколько расписаний, удовлетворяющих параметрам {reader.get_filter_query()}."
+                "Уточните заголовок."
+            )
+        
+        return reader.get_found_models().first()
 
     @staticmethod
-    def make_calendar(weeks,
-                      months : list[str],
-                      years : str) -> dict:
+    def make_calendar(weeks, months : list[str], schedule : Schedule) -> dict:
         """Makes calendar of dates for Event creating in format:
 
         parsed_weeks = { 
@@ -239,7 +485,45 @@ class EventImporter:
         }
         """
 
-        pass
+        normalized_weeks = {}
+
+        if not len(weeks):
+            raise ValueError("Отсутствуют данные недель в импортируемом файле.")
+
+        if isinstance(weeks, dict):
+            normalized_weeks = weeks
+        elif isinstance(weeks, list):
+            for week in weeks:
+                if isinstance(week, dict):
+                    for key, data in week.items():
+                        normalized_weeks[key] = data
+                else:
+                    raise ValueError("Некорректный формат данных недель в импортируемом файле.")
+        else:
+            raise ValueError("Некорректный формат данных недель в импортируемом файле.")
+
+        calendar = {}
+
+        LEFT_YEAR, RIGHT_YEAR = schedule.metadata.years.split("-", 1)
+
+        for key in normalized_weeks.keys():
+            calendar[key] = {}
+
+            for week_day in normalized_weeks[key]:
+                calendar[key][week_day["week_day_index"]] = []
+
+                for month in week_day["calendar"]:
+                    month_number = Utilities.get_month_number(months[month["month_index"]])
+
+                    for month_day in month["month_days"]:
+                        calendar[key][week_day["week_day_index"]].append(
+                            datetime.strptime(
+                                "{}.{}.{}".format(month_day, month_number, LEFT_YEAR if month_number > 6 else RIGHT_YEAR), 
+                                "%d.%m.%Y"
+                            ).date()
+                        )
+
+        return calendar
 
     @staticmethod
     def parse_data(event_data, 
@@ -271,11 +555,24 @@ class EventImporter:
                       abstract_day : AbstractDay,
                       time_slots : list[TimeSlot],
                       holds_on_dates : list[date]|list[None],
-                      calendar : dict):
+                      calendar : list[date]) -> None:
         """Creates AbstractEvents and Events for given TimeSlots and dates
         """
 
-        pass
+        for date_ in holds_on_dates:
+            for time_slot in time_slots:
+                created_abstract_event = WriteAPI.create_abstract_event(
+                    kind,
+                    subject,
+                    participants,
+                    places,
+                    abstract_day,
+                    time_slot,
+                    date_,
+                    schedule
+                )
+
+                WriteAPI.fill_semester_by_dates(created_abstract_event, calendar)
 
 
 class ReferenceImporter:
