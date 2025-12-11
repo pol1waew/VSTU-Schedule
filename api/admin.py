@@ -2,9 +2,8 @@ from api.utilities import Utilities, ReadAPI, WriteAPI, EventImportAPI
 from api.importers import ReferenceImporter
 import api.utility_filters as filters
 from django.contrib import admin, messages
-from django.contrib.admin.actions import delete_selected
-from django.forms import BaseInlineFormSet
 from django.utils import timezone
+from django.utils.html import format_html
 from django.urls import path
 from django.http import HttpResponseRedirect
 from django.contrib.admin.helpers import ACTION_CHECKBOX_NAME
@@ -307,7 +306,7 @@ class AbstractEventAdmin(BaseAdmin):
         if request.method == "POST" and request.FILES.get("selected_file"):
             ## TODO: when working with big files should use chunks() instead
             EventImportAPI.import_event_data(request.FILES['selected_file'].read())
-            messages.success(request, "Импорт успешно произведён")
+            messages.success(request, format_html(f"Импорт из файла <b>\"{request.FILES['selected_file']}\"</b> успешно произведён"))
 
         return HttpResponseRedirect("../")
 
@@ -385,7 +384,7 @@ class DepartmentAdmin(BaseAdmin):
         
     change_list_template = "../templates/api/departmentChangeListExtend.html"
     list_display = ("name", "shortname", "organization_name")
-    search_fields = ("name", "organization__name")
+    search_fields = ("name", "shortname", "organization__name")
     list_filter = (HasParentDepartmentFilter, "organization__name")
 
     def get_urls(self):
@@ -405,7 +404,7 @@ class DepartmentAdmin(BaseAdmin):
             messages.success(request, "Импорт успешно произведён")
 
         return HttpResponseRedirect("../")
-
+    
     @admin.display(description=Department._meta.get_field("organization").verbose_name, 
                    ordering="organization__name")
     def organization_name(self, obj):

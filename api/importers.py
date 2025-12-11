@@ -176,14 +176,23 @@ class EventImporter:
         """
         
         schedule = cls.find_schedule(Utilities.replace_all_roman_with_arabic_numerals(title))
-        reference_lookup : dict = {}
+        reference_lookup = {
+            "subjects" : {},
+            "kinds" : {},
+            "participants" : {},
+            "places" : {},
+            "time_slots" : TimeSlot.objects.none()
+        }
 
         for entry in entries:
             cls.correct_event_data(schedule, entry)
 
             reference_data = cls.collect_reference_data(entry)
-            cls.ensure_reference_data(reference_data)
-            reference_lookup.update(cls.build_reference_lookup(reference_data)) ## TODO: test
+
+            if not reference_data:
+                continue
+            
+            cls.make_reference_lookup(reference_data, reference_lookup)
 
             calendar = cls.make_calendar(weeks, months, schedule)
 
@@ -310,6 +319,9 @@ class EventImporter:
 
     @staticmethod
     def collect_reference_data(event_data) -> dict:
+        """Collects and prepares data
+        """
+        
         subjects : set[str] = set()
         kinds : set[str] = set()
         teachers : set[str] = set()
@@ -317,33 +329,33 @@ class EventImporter:
         places : set[tuple[str, str]] = set()
         time_slots : set[str] = set()
 
-        subjects.add(Utilities.normalize_subject_name[event_data["subject"]])
+        subjects.add(Utilities.normalize_subject_name(event_data["subject"]))
 
-        kinds.add(Utilities.normalize_kind_name[event_data["kind"]])
+        kinds.add(Utilities.normalize_kind_name(event_data["kind"]))
 
         for teacher in event_data.get("participants", {}).get("teachers", []):
-            normalizaed_teacher = Utilities.normalize_participant_name(teacher)
+            normalized_teacher = Utilities.normalize_participant_name(teacher)
 
-            if normalizaed_teacher:
-                teachers.add(normalizaed_teacher)
+            if normalized_teacher:
+                teachers.add(normalized_teacher)
                 
-        for group in event_data.get("participants", {}).get("groups", []):
-            normalizaed_group = Utilities.normalize_participant_name(group)
+        for group in event_data.get("participants", {}).get("student_groups", []):
+            normalized_group = Utilities.normalize_participant_name(group)
 
-            if normalizaed_group:
-                groups.add(normalizaed_group)
+            if normalized_group:
+                groups.add(normalized_group)
 
         for place in event_data.get("places", []):
-            normalizaed_place = Utilities.normalize_place_repr(place)
+            normalized_place = Utilities.normalize_place_repr(place)
 
-            if normalizaed_place:
-                places.add(normalizaed_place)
+            if normalized_place:
+                places.add(normalized_place)
 
         for time_slot in event_data.get("hours", []):
-            normalizaed_time_slot = Utilities.normalize_time_slot_repr(time_slot)
+            normalized_time_slot = Utilities.normalize_time_slot_repr(time_slot)
 
-            if normalizaed_time_slot:
-                time_slots.add(normalizaed_time_slot)
+            if normalized_time_slot:
+                time_slots.add(normalized_time_slot)
 
         return {
             "subjects" : subjects,
@@ -355,18 +367,99 @@ class EventImporter:
         }
 
     @staticmethod
-    def ensure_reference_data(reference_data : dict) -> None:
-        """Creates models for Event data that not exist in database
+    def make_reference_lookup(reference_data : dict, reference_lookup : dict) -> dict:
+        """Creates models for reference_data that not exist in database.
+        Then updates reference_lookup
         """
 
-        pass
+        subjects = reference_data.get("subjects", set())
 
-    @staticmethod
-    def build_reference_lookup(reference_data : dict) -> dict:
-        """Finds models for reference_data
-        """
-        
-        pass
+        if subjects:
+            existing_subjects = Subject.objects.filter(name__in=subjects)
+            existing_subject_names = list(existing_subjects.values_list("name", flat=True).distinct())
+
+            for subject in list(existing_subjects):
+                if subject.name not in reference_lookup["subjects"]:
+                    reference_lookup["subjects"].update({subject.name : subject})
+
+            subjects_to_create = [
+                Subject(name=name) 
+                for name in subjects 
+                if name not in existing_subject_names
+            ]
+
+            if subjects_to_create:
+                created_subjects = Subject.objects.bulk_create(subjects_to_create)
+
+                for subject in created_subjects:
+                    reference_lookup["subjects"].update({subject.name : subject})
+
+        kinds = reference_data.get("kinds", set())
+
+        if kinds:
+            existing_kinds = EventKind.objects.filter(name__in=kinds)
+            existing_kind_names = list(existing_kinds.values_list("name", flat=True).distinct())
+
+            for kind in list(existing_kinds):
+                if kind.name not in reference_lookup["kinds"]:
+                    reference_lookup["kinds"].update({kind.name : kind})
+
+            kinds_to_create = [
+                EventKind(name=name) 
+                for name in kinds 
+                if name not in existing_kind_names
+            ]
+
+            if kinds_to_create:
+                created_kinds = EventKind.objects.bulk_create(kinds_to_create)
+                
+                for kind in created_kinds:
+                    reference_lookup["kinds"].update({kind.name : kind})
+
+        teachers = reference_data.get("teachers", set())
+        groups = reference_data.get("groups", set())
+        participants = teachers | groups
+
+        if participants:
+            existing_participants = EventParticipant.objects.filter(name__in=participants)
+            existing_participants_names = list(existing_participants.values_list("name", flat=True).distinct())
+
+            for participant in list(existing_participants):
+                if participant.name not in reference_lookup["participants"]:
+                    reference_lookup["participants"].update({participant.name : participant})
+
+            participants_to_create = []
+
+            for name in teachers:
+                if name not in existing_participants_names:
+                    participants_to_create.append(
+                        EventParticipant(
+                            name=name,
+                            role=EventParticipant.Role.TEACHER,
+                            is_group=False,
+                            # TODO: add department
+                        )
+                    )
+            
+            for name in groups:
+                if name not in existing_participants_names:
+                    participants_to_create.append(
+                        EventParticipant(
+                            name=name,
+                            role=EventParticipant.Role.STUDENT,
+                            is_group=True,
+                            # TODO: add department
+                        )
+                    )
+
+            if participants_to_create:
+                created_participants = EventParticipant.objects.bulk_create(participants_to_create)
+
+                for participant in created_participants:
+                    if participant.name not in reference_lookup["participants"]:
+                        reference_lookup["participants"].update({participant.name : participant})
+
+
 
     @staticmethod
     def find_schedule(title : str) -> Schedule:

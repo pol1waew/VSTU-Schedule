@@ -69,12 +69,9 @@ class DateFilter(UtilityFilterBase):
     
 
 class ParticipantFilter(UtilityFilterBase):
-    """Only for work with Event model fields
-    """
-
     @staticmethod
     def by_name(name : str|list[str]) -> dict:
-        """
+        """Only for work with Event model fields
         
         Use list of participant names for OR behaviour
         """
@@ -86,7 +83,7 @@ class ParticipantFilter(UtilityFilterBase):
         
     @staticmethod
     def by_role(role : str|list[str]) -> dict:
-        """
+        """Only for work with Event model fields
 
         Use list of participant roles for OR behaviour
         """
@@ -94,8 +91,7 @@ class ParticipantFilter(UtilityFilterBase):
         if type(role) is list:
             return {"participants_override__role__in" : role}
         
-        return {"participants_override__role" : role}
-    
+        return {"participants_override__role" : role}    
 
 class PlaceFilter(UtilityFilterBase):
     @classmethod

@@ -26,7 +26,8 @@ SECRET_KEY = "django-insecure-htsb&y3j+(c+(03--yi%g=74g-g#a@e%^nvrp(0-#yji0wlrv1
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = getenv("ALLOWED_HOSTS", "").split(",")
+#ALLOWED_HOSTS = getenv("ALLOWED_HOSTS", "").split(",")
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'myapp.local']
 
 STATIC_ROOT= BASE_DIR / "staticfiles"
 STATIC_URL = "/static/"

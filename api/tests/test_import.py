@@ -1,4 +1,5 @@
 from datetime import datetime
+import json
 from django.test import TestCase
 from api.importers import EventImporter, ReferenceImporter
 from api.utilities import WriteAPI, EventImportAPI
@@ -759,6 +760,184 @@ class TestEventImporter(TestCase):
 
         self.assertEqual(AbstractEvent.objects.all().count(), 6)
         self.assertEqual(Event.objects.all().count(), 8)
+
+    def test_collect_reference_data(self):
+        EVENT_DATA = {
+            "subject": "ВКР",
+            "kind": "лекция",
+            "participants": {
+                "teachers": [
+                    "Гилка В.В.",
+                    "Кузнецова А.С."
+                ],
+                "student_groups": [
+                    "ИВТ-460"
+                ]
+            },
+            "places": [
+                "В 902а",
+                "В 902б"
+            ],
+            "hours": [
+                "11-12",
+                "8.30",
+                "10.10"
+            ],
+            "week_day_index": 0,
+            "week": "first_week",
+            "holds_on_date": [
+                "09.11.2024"
+            ]
+        }
+
+        EXPECTED_REFERENCE_DATA = {
+            "subjects": {
+                "ВКР"
+            }, 
+            "kinds": {
+                "Лекция"
+            }, 
+            "teachers": {
+                "Кузнецова А.С.", "Гилка В.В."
+            }, 
+            "groups": {
+                "ИВТ-460"
+            }, 
+            "places": {
+                ("В", "902б"), 
+                ("В", "902а")
+            }, 
+            "time_slots": {
+                ("11-12", "", ""), 
+                ("", "10:10", ""), 
+                ("", "8:30", "")
+            }
+        }
+
+        self.assertEqual(
+            EventImporter.collect_reference_data(EVENT_DATA),
+            EXPECTED_REFERENCE_DATA
+        )
+
+    def test_make_reference_lookup(self):
+        # with empty reference_lookup
+        # with non empty reference_lookup when some models already exists in reference_lookup
+        # already have something in DB that needs to be in reference_lookup
+
+        REFERENCE_DATA = [
+            {
+                "subjects": {
+                    "ВКР"
+                }, 
+                "kinds": {
+                    "Лекция"
+                }, 
+                "teachers": {
+                    "Гилка В.В.", 
+                    "Кузнецова А.С."
+                }, 
+                "groups": {
+                    "ИВТ-460"
+                }, 
+                "places": {
+                    ("В", "902а"), 
+                    ("В", "902б")
+                }, 
+                "time_slots": {
+                    ("", "8:30", ""), 
+                    ("11-12", "", ""), 
+                    ("", "10:10", "")
+                }
+            },
+            {
+                "subjects": {
+                    "МИКРОПРОЦЕССОРЫ"
+                }, 
+                "kinds": {
+                    "Лабораторная работа"
+                }, 
+                "teachers": {
+                    "Дмитриев А.С.", 
+                    "Синкевич Д."
+                }, 
+                "groups": {
+                    "ПрИн-467", 
+                    "ПрИн-466"
+                }, 
+                "places": {
+                    ("В", "903"), 
+                    ("В", "908")
+                }, 
+                "time_slots": {
+                    ("", "11:50", "13:20")
+                }
+            }
+        ]
+
+        reference_lookup = {
+            "subjects" : {},
+            "kinds" : {},
+            "participants" : {},
+            "places" : {},
+            "time_slots" : TimeSlot.objects.none()
+        }
+        
+        for data in REFERENCE_DATA:
+            EventImporter.make_reference_lookup(data, reference_lookup)
+
+        for subject in Subject.objects.all():
+            self.assertEqual(
+                Subject.objects.filter(name=subject.name).count(),
+                1
+            )
+        for kind in EventKind.objects.all():
+            self.assertEqual(
+                EventKind.objects.filter(name=kind.name).count(),
+                1
+            )
+        for participant in EventParticipant.objects.all():
+            self.assertEqual(
+                EventParticipant.objects.filter(name=participant.name).count(),
+                1
+            )
+
+    def test_(self):
+        
+
+        with open("testdata/test_import_1.json", "r", encoding="utf8") as data_file:
+            json_data = json.loads(data_file.read())
+
+        reference_lookup = {
+            "subjects" : {},
+            "kinds" : {},
+            "participants" : {},
+            "places" : {},
+            "time_slots" : TimeSlot.objects.none()
+        }
+
+        for entry in json_data["table"]["grid"]:
+            reference_data = EventImporter.collect_reference_data(entry)
+            #EventImportAPI._ensure_reference_data(reference_data)
+            #reference_lookup = EventImportAPI._build_reference_lookup(reference_data)
+
+            EventImporter.make_reference_lookup(reference_data, reference_lookup)
+            EventImporter.make_reference_lookup(reference_data, reference_lookup)
+            EventImporter.make_reference_lookup(reference_data, reference_lookup)
+            EventImporter.make_reference_lookup(reference_data, reference_lookup)
+
+        print(reference_data)
+        print(reference_lookup)
+        print(EventParticipant.objects.all())
+
+    def test_2(self):
+        from django.db.models.functions import Lower
+        EventKind.objects.create(name="QWE-166")
+
+        try:
+            print(EventKind.objects.annotate(lower_name=Lower("name")).filter(lower_name="qwe-166").all())
+            
+        except EventKind.DoesNotExist:
+            print("ничего не найдено")
 
     """
 
