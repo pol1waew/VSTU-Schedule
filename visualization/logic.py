@@ -9,6 +9,9 @@ def get_table_data(filters):
     """
     
     reader = ReadAPI()
+    # Currently working ONLY with ACTIVE Schedules
+    # TODO: selector for ARCHIVE and other Schdules 
+    reader.add_filter(ScheduleFilter.is_active())
     
     if filters["date"] == "today":
         reader.add_filter(DateFilter.today())

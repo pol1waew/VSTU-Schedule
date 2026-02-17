@@ -262,7 +262,7 @@ class TestEventImporter(TestCase):
         )
 
     def test_find_schedule_upper_and_lower_chars(self):
-        # ФАСТиВ
+        # TODO: ФАСТиВ
         pass
 
     def test_correct_holds_on_date_data(self):

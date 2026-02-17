@@ -81,7 +81,7 @@
 
             <select class="time-slot-pillbox" name="time_slot[]" multiple="multiple">
                 {% for time_slot in time_slots %}
-                    <option value="{{ time_slot }}" {% if time_slot in selected.time_slot %} selected {% endif %}>{{ time_slot }}</option>
+                    <option value="{{ time_slot }}" {% if time_slot|is_time_slot_selected:selected.time_slot %} selected {% endif %}>{{ time_slot }}</option>
                 {% endfor %}
             </select>
         </div>

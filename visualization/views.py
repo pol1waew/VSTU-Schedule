@@ -4,20 +4,31 @@ from django.template.defaulttags import register
 from visualization.logic import *
 
 @register.filter
-def list_item(list_, i):
+def list_item(list_, i) -> bool:
     try:
         return list_[i - 1]
     except:
         return None
     
 @register.filter
-def is_full_row_canceled(list_, i):
+def is_full_row_canceled(list_, i) -> bool:
     try:
         if is_same_entries(list_[i - 1], list_[i]):
             return list_[i].is_event_canceled
         return True
     except:
         return True
+    
+@register.filter
+def is_time_slot_selected(time_slot : str, selected : str|list[str]) -> bool:
+    """Created to prevent situations where
+    '8:30' sets selected as '18:30'
+    """
+    
+    if type(selected) is list:
+        return time_slot in selected
+    else:
+        return time_slot == selected
 
 def index(request):
     context = {}
@@ -50,14 +61,14 @@ def index(request):
         context["selected"] = selected
         context["data"] = get_table_data(selected)
 
-        context["groups"] = ReadAPI.get_all_groups().values_list("name", flat=True)
-        context["teachers"] = ReadAPI.get_all_teachers().values_list("name", flat=True)
-        context["places"] = [str(p) for p in ReadAPI.get_all_places()]
-        context["subjects"] = ReadAPI.get_all_subjects().values_list("name", flat=True)
-        context["kinds"] = ReadAPI.get_all_kinds().values_list("name", flat=True)
-        context["time_slots"] = [str(ts) for ts in ReadAPI.get_all_time_slots()]
+    context["groups"] = ReadAPI.get_all_groups().values_list("name", flat=True)
+    context["teachers"] = ReadAPI.get_all_teachers().values_list("name", flat=True)
+    context["places"] = [str(p) for p in ReadAPI.get_all_places()]
+    context["subjects"] = ReadAPI.get_all_subjects().values_list("name", flat=True)
+    context["kinds"] = ReadAPI.get_all_kinds().values_list("name", flat=True)
+    context["time_slots"] = [str(ts) for ts in ReadAPI.get_all_time_slots()]
 
-        context["addition_filters_visible"] = request.POST.get("addition_filters_visible") if "addition_filters_visible" in request.POST else "0"
-        context["calendar_visibile"] = "1" if "calendar_visibility" in request.POST else "0"
+    context["addition_filters_visible"] = request.POST.get("addition_filters_visible") if "addition_filters_visible" in request.POST else "0"
+    context["calendar_visibile"] = "1" if "calendar_visibility" in request.POST else "0"
 
     return render(request, "index.html", context=context)

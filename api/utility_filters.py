@@ -93,6 +93,7 @@ class ParticipantFilter(UtilityFilterBase):
         
         return {"participants_override__role" : role}    
 
+
 class PlaceFilter(UtilityFilterBase):
     @classmethod
     def by_repr_event_relative(cls, repr : str|list[str]):
@@ -267,7 +268,7 @@ class TimeSlotFilter(UtilityFilterBase):
         matches = []
 
         if type(start_time) is list:
-            start_time_list = start_time
+            start_time_list = list(start_time)
         else:
             start_time_list = [start_time]
 
@@ -304,7 +305,7 @@ class TimeSlotFilter(UtilityFilterBase):
         matches = []
 
         if type(alt_name) is list:
-            alt_names_list = alt_name
+            alt_names_list = list(alt_name)
         else:
             alt_names_list = [alt_name]
 
@@ -389,3 +390,12 @@ class AbstractEventFilter(UtilityFilterBase):
             "holds_on_date" : date_,
             "schedule" : schedule
         }
+
+
+class ScheduleFilter(UtilityFilterBase):
+    """Only for work with Event model fields
+    """
+
+    @staticmethod
+    def is_active() -> dict:
+        return {"abstract_event__schedule__status" : Schedule.Status.ACTIVE}

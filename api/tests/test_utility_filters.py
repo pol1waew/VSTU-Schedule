@@ -85,10 +85,17 @@ class TestTimeSlotFiltering(TestCase):
         )
 
     def test_alt_name_filter(self):
+        INITIAL_SINGLE_CORRECT_ALT_NAME = "11-12"
+        INITIAL_SINGLE_WRONG_ALT_NAME = "18:05"
+        INITIAL_MULTIPLE_ALT_NAMES = ["1-2", "0-0", "9-8"]
+        INITIAL_MULTIPLE_ALT_NAMES_COMBINED = ["10-15", "11.11", "12:32", "10-00"]
+
         # TimeSlot alt_names such as '0-0' '9-8' '10-15' '10-00'
         # will be correct
-        MULTIPLE_ALT_NAMES = ["1-2", "0-0", "9-8"]
-        MULTIPLE_ALT_NAMES_COMBINED = ["10-15", "11.11", "12:32", "10-00"]
+        single_correct_alt_name = str(INITIAL_SINGLE_CORRECT_ALT_NAME)
+        single_wrong_alt_name = str(INITIAL_SINGLE_WRONG_ALT_NAME)
+        multiple_alt_names = list(INITIAL_MULTIPLE_ALT_NAMES)
+        multiple_alt_names_combined = list(INITIAL_MULTIPLE_ALT_NAMES_COMBINED)
 
         EXPECTED_SINGLE_CORRECT_RESULT = ({"alt_name" : "11-12"}, [])
         EXPECTED_SINGLE_WRONG_RESULT = ({}, ["18:05"])
@@ -96,42 +103,80 @@ class TestTimeSlotFiltering(TestCase):
         EXPECTED_MULTIPLE_COMBINED_RESULTS = ({"alt_name__in" : ["10-15", "10-00"]}, ["11.11", "12:32"])
 
         self.assertSequenceEqual(
-            TimeSlotFilter.by_alt_name("11-12"),
+            TimeSlotFilter.by_alt_name(single_correct_alt_name),
             EXPECTED_SINGLE_CORRECT_RESULT
         )
         self.assertSequenceEqual(
-            TimeSlotFilter.by_alt_name("18:05"),
+            TimeSlotFilter.by_alt_name(single_wrong_alt_name),
             EXPECTED_SINGLE_WRONG_RESULT
         )
         self.assertSequenceEqual(
-            TimeSlotFilter.by_alt_name(MULTIPLE_ALT_NAMES),
+            TimeSlotFilter.by_alt_name(multiple_alt_names),
             EXPECTED_MULTIPLE_CORRENT_RESULTS
         )
         self.assertSequenceEqual(
-            TimeSlotFilter.by_alt_name(MULTIPLE_ALT_NAMES_COMBINED),
+            TimeSlotFilter.by_alt_name(multiple_alt_names_combined),
             EXPECTED_MULTIPLE_COMBINED_RESULTS
         )
 
+        # Input values should not change
+        self.assertSequenceEqual(
+            single_correct_alt_name,
+            INITIAL_SINGLE_CORRECT_ALT_NAME
+        )
+        self.assertSequenceEqual(
+            single_wrong_alt_name,
+            INITIAL_SINGLE_WRONG_ALT_NAME
+        )
+        self.assertSequenceEqual(
+            multiple_alt_names,
+            INITIAL_MULTIPLE_ALT_NAMES
+        )
+        self.assertSequenceEqual(
+            multiple_alt_names_combined,
+            INITIAL_MULTIPLE_ALT_NAMES_COMBINED
+        )
+
     def test_start_time_filter(self):
-        MULTIPLE_START_TIMES = ["18:05", "8:30 10:00", "15:30"]
-        MULTIPLE_START_TIMES_WITH_SOME_WRONG = ["11:11", "23-12", "2:09", "14.25"]
+        INITIAL_SINGLE_START_TIME = "18:05"
+        INITIAL_MULTIPLE_START_TIMES = ["18:05", "8:30 10:00", "15:30"]
+        INITIAL_MULTIPLE_START_TIMES_WITH_SOME_WRONG = ["11:11", "23-12", "2:09", "14.25"]
+
+        single_start_time = str(INITIAL_SINGLE_START_TIME)
+        multiple_start_times = list(INITIAL_MULTIPLE_START_TIMES)
+        multiple_start_times_with_some_wrong = list(INITIAL_MULTIPLE_START_TIMES_WITH_SOME_WRONG)
 
         EXPECTED_COLON_RESULT = ({"start_time__contains" : "18:05"}, [])
         EXPECTED_MULTIPLE_START_TIMES_RESULTS = ({"start_time__in" : ["18:05", "8:30", "15:30"]}, [])
         EXPECTED_WITH_SOME_WRONG_RESULT = ({"start_time__in" : ["11:11", "2:09"]}, ["23-12", "14.25"])
 
         self.assertSequenceEqual(
-            TimeSlotFilter.by_start_time("18:05"),
+            TimeSlotFilter.by_start_time(single_start_time),
             EXPECTED_COLON_RESULT
         )
         self.assertSequenceEqual(
-            TimeSlotFilter.by_start_time(MULTIPLE_START_TIMES),
+            TimeSlotFilter.by_start_time(multiple_start_times),
             EXPECTED_MULTIPLE_START_TIMES_RESULTS
         )
         self.assertSequenceEqual(
-            TimeSlotFilter.by_start_time(MULTIPLE_START_TIMES_WITH_SOME_WRONG),
+            TimeSlotFilter.by_start_time(multiple_start_times_with_some_wrong),
             EXPECTED_WITH_SOME_WRONG_RESULT
-        )        
+        )
+
+        # Input values should not change
+        self.assertSequenceEqual(
+            single_start_time,
+            INITIAL_SINGLE_START_TIME
+        )
+        self.assertSequenceEqual(
+            multiple_start_times,
+            INITIAL_MULTIPLE_START_TIMES
+        )
+        self.assertSequenceEqual(
+            multiple_start_times_with_some_wrong,
+            INITIAL_MULTIPLE_START_TIMES_WITH_SOME_WRONG
+        )
+
 
 class TestPlaceFiltering(TestCase):
     def setUp(self):
