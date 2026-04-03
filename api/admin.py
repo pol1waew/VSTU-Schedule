@@ -376,9 +376,9 @@ class DepartmentAdmin(BaseAdmin):
 
         def queryset(self, request, queryset):
             if self.value() in self.HAS_VALUES:
-                return queryset.filter(parent_department__isnull=True)
-            elif self.value() in self.HAS_NOT_VALUES:
                 return queryset.filter(parent_department__isnull=False)
+            elif self.value() in self.HAS_NOT_VALUES:
+                return queryset.filter(parent_department__isnull=True)
             
             return queryset
         
